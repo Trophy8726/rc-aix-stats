@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aix en Provence Roller Hockey — Saison 2025-2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#171f2b;
+    --ice:#eef2f4;
+    --surface:#ffffff;
+    --amber:#f2a93b;
+    --amber-deep:#c9820f;
+    --red:#d64550;
+    --blue:#3e7cb1;
+    --slate:#5b6b7a;
+    --line:#dde3e7;
+    --line-dark:#2c3745;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ice);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- HERO / SCOREBOARD ---------- */
+  .hero{
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,.05), transparent 40%),
+      linear-gradient(180deg, var(--ink) 0%, #101720 100%);
+    color:#fff;
+    padding:2.6rem 1.4rem 2.2rem;
+    position:relative;
+    overflow:hidden;
+    border-bottom:4px solid var(--amber);
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 34px);
+    mask-image: radial-gradient(circle at 80% 10%, black, transparent 65%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative; max-width:1080px; margin:0 auto;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.72rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--amber); margin:0 0 .5rem;
+  }
+  .hero h1{font-size:clamp(1.7rem,5vw,2.6rem); margin:0 0 .25rem; line-height:1.05;}
+  .hero .sub{color:#aab6c2; font-size:.92rem; margin:0 0 1.6rem; font-family:'IBM Plex Sans',sans-serif; text-transform:none; letter-spacing:0;}
+
+  .scoreboard{
+    display:flex; flex-wrap:wrap; gap:0;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.03);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .sb-cell{
+    flex:1 1 110px;
+    padding:.9rem 1rem;
+    border-right:1px solid rgba(255,255,255,.1);
+  }
+  .sb-cell:last-child{border-right:none;}
+  .sb-label{font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:#8592a0; margin-bottom:.3rem;}
+  .sb-value{font-family:'Oswald',sans-serif; font-size:1.9rem; font-weight:600; line-height:1; color:var(--amber); font-variant-numeric:tabular-nums;}
+  .sb-value.small{font-size:1.3rem;}
+  .sb-value .vs{color:#5fb08a;}
+  .sb-value .ns{color:#9aa6b2;}
+  .sb-value .ds{color:var(--red);}
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{max-width:1080px; margin:0 auto; padding:1.6rem 1.4rem 4rem;}
+  .filters{
+    position:sticky; top:0; z-index:20;
+    background:rgba(238,242,244,.92);
+    backdrop-filter:blur(6px);
+    display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;
+    padding:.8rem 1.4rem;
+    border-bottom:1px solid var(--line);
+    margin:0 -1.4rem 1.8rem;
+  }
+  .filters label{font-family:'IBM Plex Mono',monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--slate); margin-right:.35rem;}
+  .filters select{
+    font-family:'IBM Plex Sans',sans-serif; font-size:.86rem;
+    padding:.4rem .6rem; border-radius:5px; border:1px solid var(--line);
+    background:#fff; color:var(--ink); cursor:pointer;
+  }
+  .filters .count{margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:.76rem; color:var(--slate);}
+
+  section{margin-bottom:2.6rem;}
+  .section-head{display:flex; align-items:baseline; gap:.6rem; margin-bottom:.9rem;}
+  .section-head h2{font-size:1.15rem; margin:0; color:var(--ink);}
+  .section-head .n{font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:var(--slate); text-transform:none; letter-spacing:0;}
+  .section-note{font-size:.8rem; color:var(--slate); margin:.4rem 0 0;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:1.1rem 1.2rem;}
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:1rem;}
+  .grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+  @media (max-width:760px){ .grid-2{grid-template-columns:1fr;} .grid-4{grid-template-columns:repeat(2,1fr);} }
+
+  .kpi{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:.85rem .9rem;}
+  .kpi .k-label{font-family:'IBM Plex Mono',monospace; font-size:.64rem; text-transform:uppercase; letter-spacing:.08em; color:var(--slate);}
+  .kpi .k-value{font-family:'Oswald',sans-serif; font-size:1.5rem; font-weight:600; margin-top:.15rem; font-variant-numeric:tabular-nums;}
+
+  .chart-box{position:relative; height:230px;}
+  .chart-box.tall{height:280px;}
+
+  .dh-card{border-radius:10px; padding:1.1rem 1.2rem; color:#fff;}
+  .dh-card.home{background:linear-gradient(135deg,#274b6d,#1c3650);}
+  .dh-card.away{background:linear-gradient(135deg,#5b3a2e,#3f2620);}
+  .dh-card h3{margin:0 0 .7rem; font-size:.95rem; color:#fff;}
+  .dh-row{display:flex; justify-content:space-between; font-size:.84rem; padding:.28rem 0; border-bottom:1px solid rgba(255,255,255,.12);}
+  .dh-row:last-child{border-bottom:none;}
+  .dh-row b{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;}
+
+  table{width:100%; border-collapse:collapse; font-size:.85rem;}
+  th{text-align:left; font-family:'IBM Plex Mono',monospace; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--slate); padding:.5rem .5rem; border-bottom:1px solid var(--line);}
+  td{padding:.5rem .5rem; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .num{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;}
+  .badge{display:inline-block; padding:.15rem .5rem; border-radius:20px; font-size:.68rem; font-weight:600; font-family:'IBM Plex Mono',monospace;}
+  .badge.v{background:#e4f3ec; color:#2c7a54;}
+  .badge.n{background:#eef0f2; color:#5b6b7a;}
+  .badge.d{background:#fbe8ea; color:#b8323d;}
+  .lieu-tag{font-size:.7rem; color:var(--slate);}
+
+  .leader-row{display:flex; align-items:center; gap:.6rem; padding:.4rem 0; border-bottom:1px solid var(--line);}
+  .leader-row:last-child{border-bottom:none;}
+  .leader-num{width:2.1rem; height:2.1rem; border-radius:50%; background:var(--ink); color:var(--amber); display:flex; align-items:center; justify-content:center; font-family:'Oswald',sans-serif; font-weight:600; font-size:.9rem; flex-shrink:0;}
+  .leader-bar-wrap{flex:1;}
+  .leader-bar-bg{background:var(--line); border-radius:3px; height:8px; overflow:hidden; margin-top:.2rem;}
+  .leader-bar{height:100%; background:var(--amber); border-radius:3px;}
+  .leader-val{font-family:'IBM Plex Mono',monospace; font-size:.8rem; width:2.2rem; text-align:right; flex-shrink:0;}
+
+  footer{max-width:1080px; margin:0 auto; padding:1rem 1.4rem 2.5rem; color:var(--slate); font-size:.76rem;}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">RC Aix en Provence · Roller Hockey · Nationale 3</p>
+    <h1>Saison 2025 – 2026</h1>
+    <p class="sub">24 rencontres officielles · saison régulière, phase finale et finales nationales à Rouen</p>
+    <div class="scoreboard" id="scoreboard"></div>
+  </div>
+</div>
+
+<div class="filters">
+  <div><label for="f-lieu">Lieu</label>
+    <select id="f-lieu">
+      <option value="tous">Tous</option>
+      <option value="domicile">Domicile</option>
+      <option value="exterieur">Extérieur</option>
+    </select>
+  </div>
+  <div><label for="f-phase">Phase</label>
+    <select id="f-phase">
+      <option value="tous">Toutes</option>
+      <option value="Phase courante">Saison régulière</option>
+      <option value="1/4 de finale">1/4 de finale</option>
+      <option value="Demi-finale">Demi-finale</option>
+      <option value="Finale poules">Finale — poules</option>
+      <option value="Finale classement">Finale — classement</option>
+    </select>
+  </div>
+  <div class="count" id="f-count"></div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <div class="grid-4" id="kpis"></div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Quand marquons-nous ?</h2></div>
+    <p class="section-note">Chaque barre compte les buts marqués (ambre) ou encaissés (rouge) durant cette tranche de 5 minutes, tous matchs de la sélection cumulés.</p>
+    <div class="card"><div class="chart-box tall"><canvas id="chartTiming"></canvas></div></div>
+    <p class="section-note">Les périodes durent 25 minutes (mi-temps à 25:00, fin du temps réglementaire à 50:00). Au-delà : prolongation.</p>
+  </section>
+
+  <section>
+    <div class="grid-2">
+      <div>
+        <div class="section-head"><h2>Répartition par période</h2></div>
+        <p class="section-note">Nombre total de buts marqués et encaissés selon qu'ils sont tombés en 1ère mi-temps, 2e mi-temps ou prolongation.</p>
+        <div class="card"><div class="chart-box"><canvas id="chartPeriod"></canvas></div></div>
+      </div>
+      <div>
+        <div class="section-head"><h2>Trajectoire de la saison</h2></div>
+        <p class="section-note">Un point par match, dans l'ordre chronologique. La courbe additionne l'écart de buts (pour − contre) match après match : elle monte quand on marque plus qu'on encaisse, descend dans le cas inverse. Couleur du point = résultat (vert victoire, gris nul, rouge défaite).</p>
+        <div class="card"><div class="chart-box"><canvas id="chartTrend"></canvas></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Domicile vs extérieur</h2><span class="n">indépendant du filtre lieu ci-dessus</span></div>
+    <div class="grid-2">
+      <div class="dh-card home" id="dh-home"></div>
+      <div class="dh-card away" id="dh-away"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Pénalités</h2></div>
+    <div class="grid-2">
+      <div>
+        <p class="section-note" style="margin:0 0 .5rem;">Par type de code — nombre de pénalités prises par nous (ambre) et par l'adversaire (rouge) pour chaque code d'infraction.</p>
+        <div class="card"><div class="chart-box tall"><canvas id="chartPenCode"></canvas></div></div>
+      </div>
+      <div>
+        <p class="section-note" style="margin:0 0 .5rem;">Dans le temps — mêmes pénalités, réparties par tranche de 5 minutes du match.</p>
+        <div class="card"><div class="chart-box tall"><canvas id="chartPenTime"></canvas></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid-2">
+      <div>
+        <div class="section-head"><h2>Meilleurs buteurs</h2></div>
+        <p class="section-note">Nombre de buts marqués par numéro de maillot, sur la sélection filtrée.</p>
+        <div class="card" id="leaderScorers"></div>
+      </div>
+      <div>
+        <div class="section-head"><h2>Meilleurs passeurs</h2></div>
+        <p class="section-note">Nombre de passes décisives par numéro de maillot, sur la sélection filtrée.</p>
+        <div class="card" id="leaderAssists"></div>
+      </div>
+    </div>
+    <p class="section-note">Classement par numéro de maillot (les noms n'étaient pas consolidés joueur par joueur dans cette première version).</p>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Tous les matchs</h2></div>
+    <div class="card" style="overflow-x:auto;">
+      <table id="matchTable">
+        <thead><tr>
+          <th>Date</th><th>Adversaire</th><th>Lieu</th><th>Phase</th><th class="num">Score</th><th>Résultat</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Données extraites des rapports officiels de match — Fédération Française de Roller & Skateboard. Généré pour un usage interne au club.
+</footer>
+
+<script>
+const DATA = [{"match_id":"137826","date":"2026-05-24","heure":"14:00","lieu":"ROUEN - MJC RIVE GAUCHE","competition":"Nationale 3","phase":"Finale classement","adversaire":"RENNES","adversaire_code":"00037","us_score":{"p1":0,"p2":2,"prol":0,"tab":0,"total":2},"adv_score":{"p1":1,"p2":3,"prol":0,"tab":0,"total":4},"buts_pour":[{"temps":"28:56","buteur":6,"assist":null},{"temps":"31:00","buteur":10,"assist":78}],"buts_contre":[{"temps":"14:11","buteur":88,"assist":null},{"temps":"26:52","buteur":96,"assist":11},{"temps":"28:31","buteur":84,"assist":96},{"temps":"39:04","buteur":88,"assist":null}],"pen_pour":[{"temps":"14:38","joueur":70,"code":"DUR","min":2}],"pen_contre":[{"temps":"14:38","joueur":96,"code":"DUR","min":2}],"domicile":false,"resultat":"defaite"},{"match_id":"137823","date":"2026-05-24","heure":"09:00","lieu":"ROUEN - MJC RIVE GAUCHE","competition":"Nationale 3","phase":"Finale poules","adversaire":"RENNES","adversaire_code":"00037","us_score":{"p1":3,"p2":3,"prol":0,"tab":0,"total":6},"adv_score":{"p1":0,"p2":6,"prol":0,"tab":0,"total":6},"buts_pour":[{"temps":"03:35","buteur":7,"assist":15},{"temps":"13:38","buteur":78,"assist":16},{"temps":"18:33","buteur":15,"assist":null},{"temps":"25:32","buteur":7,"assist":17},{"temps":"32:11","buteur":17,"assist":15},{"temps":"36:52","buteur":10,"assist":78}],"buts_contre":[{"temps":"23:31","buteur":83,"assist":27},{"temps":"26:10","buteur":77,"assist":null},{"temps":"32:39","buteur":61,"assist":84},{"temps":"33:10","buteur":61,"assist":null},{"temps":"33:40","buteur":76,"assist":62},{"temps":"39:11","buteur":77,"assist":null}],"pen_pour":[{"temps":"08:57","joueur":39,"code":"ACC","min":2},{"temps":"18:49","joueur":69,"code":"GEN","min":2},{"temps":"40:00","joueur":39,"code":"DUR","min":2}],"pen_contre":[{"temps":"18:10","joueur":61,"code":"CIN","min":2},{"temps":"40:00","joueur":88,"code":"DUR","min":2}],"domicile":false,"resultat":"nul"},{"match_id":"137821","date":"2026-05-23","heure":"19:00","lieu":"ROUEN - MJC RIVE GAUCHE","competition":"Nationale 3","phase":"Finale poules","adversaire":"ROUEN","adversaire_code":"00207","us_score":{"p1":3,"p2":2,"prol":0,"tab":0,"total":5},"adv_score":{"p1":3,"p2":2,"prol":0,"tab":0,"total":5},"buts_pour":[{"temps":"01:55","buteur":7,"assist":15},{"temps":"14:36","buteur":6,"assist":39},{"temps":"15:40","buteur":15,"assist":10},{"temps":"26:49","buteur":7,"assist":17},{"temps":"33:33","buteur":16,"assist":null}],"buts_contre":[{"temps":"00:58","buteur":79,"assist":8},{"temps":"09:18","buteur":28,"assist":91},{"temps":"13:24","buteur":91,"assist":null},{"temps":"25:35","buteur":97,"assist":79},{"temps":"35:50","buteur":28,"assist":null}],"pen_pour":[{"temps":"18:12","joueur":7,"code":"TRE","min":2}],"pen_contre":[{"temps":"15:04","joueur":32,"code":"INC","min":2},{"temps":"39:42","joueur":91,"code":"TRE","min":2}],"domicile":false,"resultat":"nul"},{"match_id":"137820","date":"2026-05-23","heure":"15:30","lieu":"ROUEN - MJC RIVE GAUCHE","competition":"Nationale 3","phase":"Finale poules","adversaire":"PESSAC","adversaire_code":"00250","us_score":{"p1":1,"p2":2,"prol":0,"tab":0,"total":3},"adv_score":{"p1":1,"p2":3,"prol":0,"tab":0,"total":4},"buts_pour":[{"temps":"16:22","buteur":7,"assist":10},{"temps":"28:16","buteur":16,"assist":69},{"temps":"36:44","buteur":69,"assist":null}],"buts_contre":[{"temps":"04:09","buteur":78,"assist":40},{"temps":"24:30","buteur":25,"assist":null},{"temps":"25:17","buteur":22,"assist":78},{"temps":"38:44","buteur":40,"assist":null}],"pen_pour":[{"temps":"22:34","joueur":70,"code":"SUR","min":2}],"pen_contre":[{"temps":"15:52","joueur":78,"code":"ACC","min":2}],"domicile":false,"resultat":"defaite"},{"match_id":"137658","date":"2026-05-10","heure":"15:30","lieu":"GYMNASE DU CHARREL - AUBAGNE","competition":"Nationale 3","phase":"Demi-finale","adversaire":"AUBAGNE","adversaire_code":"00120","us_score":{"p1":2,"p2":0,"prol":0,"tab":0,"total":2},"adv_score":{"p1":1,"p2":1,"prol":0,"tab":0,"total":2},"buts_pour":[{"temps":"09:13","buteur":7,"assist":15},{"temps":"15:09","buteur":17,"assist":null}],"buts_contre":[{"temps":"14:16","buteur":11,"assist":7},{"temps":"22:00","buteur":96,"assist":32}],"pen_pour":[{"temps":"03:44","joueur":39,"code":"OBS","min":2},{"temps":"13:48","joueur":16,"code":"TRE","min":2},{"temps":"26:28","joueur":16,"code":"TRE","min":2}],"pen_contre":[{"temps":"09:13","joueur":16,"code":"ACC","min":2}],"domicile":false,"resultat":"nul"},{"match_id":"137656","date":"2026-05-10","heure":"10:30","lieu":"GYMNASE DU CHARREL - AUBAGNE","competition":"Nationale 3","phase":"Demi-finale","adversaire":"SEYNOD","adversaire_code":"01484","us_score":{"p1":6,"p2":1,"prol":0,"tab":0,"total":7},"adv_score":{"p1":0,"p2":2,"prol":0,"tab":0,"total":2},"buts_pour":[{"temps":"02:43","buteur":16,"assist":null},{"temps":"06:31","buteur":6,"assist":null},{"temps":"12:10","buteur":16,"assist":69},{"temps":"13:07","buteur":10,"assist":17},{"temps":"16:19","buteur":17,"assist":7},{"temps":"19:22","buteur":17,"assist":34},{"temps":"34:30","buteur":15,"assist":17}],"buts_contre":[{"temps":"25:13","buteur":7,"assist":9},{"temps":"37:52","buteur":7,"assist":null}],"pen_pour":[{"temps":"23:36","joueur":6,"code":"ACC","min":2},{"temps":"33:40","joueur":52,"code":"CBA","min":5},{"temps":"33:40","joueur":52,"code":"EXC","min":0}],"pen_contre":[{"temps":"12:29","joueur":9,"code":"ACC","min":2},{"temps":"33:40","joueur":21,"code":"ANT","min":2},{"temps":"36:26","joueur":18,"code":"HAU","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"137654","date":"2026-05-09","heure":"20:00","lieu":"GYMNASE DU CHARREL - AUBAGNE","competition":"Nationale 3","phase":"Demi-finale","adversaire":"TARBES","adversaire_code":"00407","us_score":{"p1":3,"p2":1,"prol":0,"tab":0,"total":4},"adv_score":{"p1":2,"p2":1,"prol":0,"tab":0,"total":3},"buts_pour":[{"temps":"08:57","buteur":15,"assist":null},{"temps":"11:40","buteur":7,"assist":10},{"temps":"19:53","buteur":15,"assist":34},{"temps":"32:44","buteur":70,"assist":78}],"buts_contre":[{"temps":"10:35","buteur":29,"assist":22},{"temps":"12:53","buteur":98,"assist":48},{"temps":"35:39","buteur":21,"assist":null}],"pen_pour":[{"temps":"22:57","joueur":16,"code":"TRE","min":2},{"temps":"27:05","joueur":70,"code":"OBS","min":2}],"pen_contre":[{"temps":"10:56","joueur":21,"code":"INC","min":2},{"temps":"30:57","joueur":29,"code":"SUR","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"137275","date":"2026-04-19","heure":"15:30","lieu":"SALLE PIGNADA","competition":"Nationale 3","phase":"1/4 de finale","adversaire":"ANGLET","adversaire_code":"01297","us_score":{"p1":0,"p2":4,"prol":0,"tab":0,"total":4},"adv_score":{"p1":0,"p2":0,"prol":0,"tab":0,"total":0},"buts_pour":[{"temps":"23:40","buteur":10,"assist":15},{"temps":"28:41","buteur":7,"assist":17},{"temps":"35:42","buteur":17,"assist":15},{"temps":"36:03","buteur":78,"assist":16}],"buts_contre":[],"pen_pour":[{"temps":"18:52","joueur":52,"code":"CIN","min":2},{"temps":"23:40","joueur":2,"code":"EQU","min":2},{"temps":"33:16","joueur":17,"code":"ANT","min":2}],"pen_contre":[{"temps":"03:33","joueur":3,"code":"RET","min":2},{"temps":"22:37","joueur":11,"code":"ACC","min":2},{"temps":"33:16","joueur":77,"code":"ANT","min":2},{"temps":"40:00","joueur":3,"code":"MEC","min":10}],"domicile":false,"resultat":"victoire"},{"match_id":"137272","date":"2026-04-19","heure":"09:00","lieu":"SALLE PIGNADA","competition":"Nationale 3","phase":"1/4 de finale","adversaire":"GRENOBLE","adversaire_code":"00998","us_score":{"p1":1,"p2":0,"prol":0,"tab":0,"total":1},"adv_score":{"p1":0,"p2":1,"prol":0,"tab":0,"total":1},"buts_pour":[{"temps":"03:21","buteur":17,"assist":7}],"buts_contre":[{"temps":"23:54","buteur":12,"assist":4}],"pen_pour":[{"temps":"00:05","joueur":39,"code":"TRE","min":2},{"temps":"13:57","joueur":39,"code":"TRE","min":2},{"temps":"39:19","joueur":10,"code":"TRE","min":2}],"pen_contre":[],"domicile":false,"resultat":"nul"},{"match_id":"137270","date":"2026-04-18","heure":"18:00","lieu":"SALLE PIGNADA","competition":"Nationale 3","phase":"1/4 de finale","adversaire":"BRETIGNY","adversaire_code":"01079","us_score":{"p1":3,"p2":1,"prol":0,"tab":0,"total":4},"adv_score":{"p1":2,"p2":1,"prol":0,"tab":0,"total":3},"buts_pour":[{"temps":"05:47","buteur":20,"assist":78},{"temps":"13:39","buteur":78,"assist":16},{"temps":"18:45","buteur":52,"assist":null},{"temps":"22:28","buteur":16,"assist":null}],"buts_contre":[{"temps":"07:39","buteur":14,"assist":null},{"temps":"09:53","buteur":58,"assist":5},{"temps":"38:25","buteur":29,"assist":13}],"pen_pour":[{"temps":"32:50","joueur":70,"code":"CIN","min":2}],"pen_contre":[{"temps":"09:08","joueur":81,"code":"INC","min":2},{"temps":"32:50","joueur":14,"code":"CIN","min":2},{"temps":"34:02","joueur":77,"code":"OBS","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"112223","date":"2026-03-14","heure":"19:30","lieu":"VARCES - Gymnase Lionel Terray","competition":"Nationale 3","phase":"Phase courante","adversaire":"VARCES","adversaire_code":"00956","us_score":{"p1":3,"p2":2,"prol":2,"tab":0,"total":7},"adv_score":{"p1":2,"p2":1,"prol":1,"tab":0,"total":4},"buts_pour":[{"temps":"04:24","buteur":39,"assist":null},{"temps":"06:29","buteur":2,"assist":null},{"temps":"16:48","buteur":20,"assist":10},{"temps":"33:03","buteur":15,"assist":34},{"temps":"34:27","buteur":10,"assist":39},{"temps":"43:57","buteur":7,"assist":15},{"temps":"46:37","buteur":17,"assist":7}],"buts_contre":[{"temps":"04:33","buteur":24,"assist":30},{"temps":"19:51","buteur":25,"assist":null},{"temps":"30:52","buteur":25,"assist":null},{"temps":"48:17","buteur":2,"assist":null}],"pen_pour":[{"temps":"14:55","joueur":16,"code":"OBS","min":2},{"temps":"23:33","joueur":7,"code":"CIN","min":2},{"temps":"45:44","joueur":39,"code":"ANT","min":2}],"pen_contre":[{"temps":"27:12","joueur":3,"code":"ACC","min":2},{"temps":"28:42","joueur":25,"code":"RET","min":2},{"temps":"43:10","joueur":25,"code":"DUR","min":2},{"temps":"45:44","joueur":30,"code":"ANT","min":2},{"temps":"47:24","joueur":24,"code":"TRE","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"112214","date":"2026-02-14","heure":"19:00","lieu":"Gymnase Pigneguy - VOREPPE","competition":"Nationale 3","phase":"Phase courante","adversaire":"ALBENC","adversaire_code":"00917","us_score":{"p1":2,"p2":1,"prol":3,"tab":0,"total":6},"adv_score":{"p1":1,"p2":0,"prol":0,"tab":0,"total":1},"buts_pour":[{"temps":"01:30","buteur":6,"assist":17},{"temps":"10:54","buteur":15,"assist":78},{"temps":"39:13","buteur":16,"assist":78},{"temps":"43:32","buteur":17,"assist":null},{"temps":"45:27","buteur":78,"assist":16},{"temps":"45:54","buteur":39,"assist":15}],"buts_contre":[{"temps":"16:30","buteur":1,"assist":null}],"pen_pour":[{"temps":"25:00","joueur":39,"code":"HAU","min":2},{"temps":"30:39","joueur":78,"code":"TRE","min":2},{"temps":"40:31","joueur":39,"code":"ACC","min":2},{"temps":"46:17","joueur":70,"code":"OBS","min":2},{"temps":"49:58","joueur":6,"code":"MEC","min":10}],"pen_contre":[{"temps":"09:21","joueur":10,"code":"TRE","min":2},{"temps":"28:01","joueur":77,"code":"CRO","min":2},{"temps":"34:42","joueur":24,"code":"HAU","min":2},{"temps":"49:58","joueur":9,"code":"MEC","min":10}],"domicile":false,"resultat":"victoire"},{"match_id":"112184","date":"2026-01-31","heure":"19:30","lieu":"SALLE PIERRE COULANGE","competition":"Nationale 3","phase":"Phase courante","adversaire":"AUBAGNE","adversaire_code":"00120","us_score":{"p1":3,"p2":1,"prol":1,"tab":0,"total":5},"adv_score":{"p1":1,"p2":1,"prol":0,"tab":0,"total":2},"buts_pour":[{"temps":"06:43","buteur":78,"assist":16},{"temps":"07:19","buteur":15,"assist":52},{"temps":"12:48","buteur":70,"assist":15},{"temps":"36:28","buteur":78,"assist":20},{"temps":"47:35","buteur":70,"assist":null}],"buts_contre":[{"temps":"11:34","buteur":89,"assist":null},{"temps":"20:37","buteur":7,"assist":8}],"pen_pour":[{"temps":"20:00","joueur":6,"code":"TRE","min":2},{"temps":"37:21","joueur":15,"code":"HAU","min":2},{"temps":"40:40","joueur":16,"code":"INC","min":2}],"pen_contre":[{"temps":"11:52","joueur":32,"code":"CBA","min":2},{"temps":"43:16","joueur":8,"code":"SUR","min":2}],"domicile":true,"resultat":"victoire"},{"match_id":"112209","date":"2026-01-17","heure":"19:30","lieu":"SALLE PIERRE COULANGE","competition":"Nationale 3","phase":"Phase courante","adversaire":"NÎMES","adversaire_code":"00689","us_score":{"p1":5,"p2":9,"prol":0,"tab":0,"total":14},"adv_score":{"p1":3,"p2":3,"prol":0,"tab":0,"total":7},"buts_pour":[{"temps":"01:44","buteur":17,"assist":null},{"temps":"05:19","buteur":15,"assist":17},{"temps":"08:56","buteur":7,"assist":17},{"temps":"12:10","buteur":16,"assist":78},{"temps":"13:33","buteur":15,"assist":null},{"temps":"21:42","buteur":17,"assist":34},{"temps":"23:10","buteur":16,"assist":78},{"temps":"24:36","buteur":25,"assist":null},{"temps":"26:24","buteur":7,"assist":17},{"temps":"29:24","buteur":52,"assist":null},{"temps":"33:08","buteur":52,"assist":10},{"temps":"33:24","buteur":17,"assist":34},{"temps":"38:03","buteur":17,"assist":7},{"temps":"38:24","buteur":78,"assist":69}],"buts_contre":[{"temps":"04:04","buteur":22,"assist":29},{"temps":"04:39","buteur":55,"assist":null},{"temps":"18:25","buteur":22,"assist":38},{"temps":"21:25","buteur":30,"assist":null},{"temps":"29:40","buteur":22,"assist":null},{"temps":"39:55","buteur":30,"assist":null},{"temps":"41:36","buteur":22,"assist":null}],"pen_pour":[{"temps":"42:31","joueur":52,"code":"INC","min":2}],"pen_contre":[{"temps":"04:50","joueur":29,"code":"TRE","min":2},{"temps":"09:34","joueur":29,"code":"RET","min":2}],"domicile":true,"resultat":"victoire"},{"match_id":"112204","date":"2026-01-10","heure":"18:00","lieu":"Complexe sportif Albert Batteux","competition":"Nationale 3","phase":"Phase courante","adversaire":"MONTPELLIER","adversaire_code":"00210","us_score":{"p1":1,"p2":4,"prol":3,"tab":0,"total":8},"adv_score":{"p1":0,"p2":1,"prol":1,"tab":0,"total":2},"buts_pour":[{"temps":"09:32","buteur":15,"assist":10},{"temps":"22:01","buteur":15,"assist":70},{"temps":"25:32","buteur":39,"assist":70},{"temps":"36:40","buteur":10,"assist":70},{"temps":"37:10","buteur":70,"assist":10},{"temps":"40:47","buteur":39,"assist":17},{"temps":"42:30","buteur":7,"assist":17},{"temps":"47:17","buteur":15,"assist":17}],"buts_contre":[{"temps":"32:54","buteur":31,"assist":88},{"temps":"46:55","buteur":54,"assist":null}],"pen_pour":[],"pen_contre":[{"temps":"40:10","joueur":9,"code":"OBS","min":2},{"temps":"46:55","joueur":93,"code":"ANT","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"112191","date":"2026-03-07","heure":"18:00","lieu":"SAINT-PAUL-TROIS-CHATEAUX - Halle Marcel Gony","competition":"Nationale 3","phase":"Phase courante","adversaire":"TRICASTIN","adversaire_code":"01038","us_score":{"p1":5,"p2":6,"prol":1,"tab":0,"total":12},"adv_score":{"p1":1,"p2":2,"prol":0,"tab":0,"total":3},"buts_pour":[{"temps":"01:56","buteur":17,"assist":34},{"temps":"13:15","buteur":16,"assist":7},{"temps":"14:27","buteur":16,"assist":78},{"temps":"17:46","buteur":78,"assist":16},{"temps":"19:25","buteur":7,"assist":17},{"temps":"22:09","buteur":2,"assist":null},{"temps":"24:41","buteur":78,"assist":16},{"temps":"26:17","buteur":7,"assist":34},{"temps":"27:08","buteur":78,"assist":16},{"temps":"28:27","buteur":19,"assist":null},{"temps":"32:50","buteur":7,"assist":17},{"temps":"41:29","buteur":39,"assist":null}],"buts_contre":[{"temps":"18:08","buteur":95,"assist":66},{"temps":"25:54","buteur":66,"assist":91},{"temps":"39:22","buteur":91,"assist":5}],"pen_pour":[{"temps":"08:43","joueur":7,"code":"RET","min":2},{"temps":"35:09","joueur":39,"code":"CIN","min":2}],"pen_contre":[{"temps":"12:05","joueur":66,"code":"TRE","min":2},{"temps":"12:43","joueur":7,"code":"RET","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"112199","date":"2025-12-13","heure":"19:30","lieu":"SALLE PIERRE COULANGE","competition":"Nationale 3","phase":"Phase courante","adversaire":"AJACCIO","adversaire_code":"01914","us_score":{"p1":2,"p2":2,"prol":2,"tab":0,"total":6},"adv_score":{"p1":1,"p2":1,"prol":1,"tab":0,"total":3},"buts_pour":[{"temps":"06:04","buteur":17,"assist":70},{"temps":"10:30","buteur":78,"assist":null},{"temps":"23:59","buteur":7,"assist":17},{"temps":"38:05","buteur":78,"assist":6},{"temps":"44:46","buteur":34,"assist":7},{"temps":"47:47","buteur":7,"assist":17}],"buts_contre":[{"temps":"15:18","buteur":25,"assist":29},{"temps":"33:02","buteur":83,"assist":26},{"temps":"48:31","buteur":24,"assist":null}],"pen_pour":[{"temps":"03:34","joueur":2,"code":"TRE","min":2},{"temps":"14:04","joueur":70,"code":"HAU","min":2},{"temps":"26:12","joueur":52,"code":"CIN","min":2},{"temps":"32:28","joueur":69,"code":"DUR","min":2}],"pen_contre":[{"temps":"05:33","joueur":25,"code":"TRE","min":2},{"temps":"25:48","joueur":44,"code":"TRE","min":2}],"domicile":true,"resultat":"victoire"},{"match_id":"112195","date":"2025-12-06","heure":"19:30","lieu":"SALLE PIERRE COULANGE","competition":"Nationale 3","phase":"Phase courante","adversaire":"VARCES","adversaire_code":"00956","us_score":{"p1":2,"p2":1,"prol":2,"tab":0,"total":5},"adv_score":{"p1":0,"p2":1,"prol":2,"tab":0,"total":3},"buts_pour":[{"temps":"05:27","buteur":10,"assist":70},{"temps":"07:37","buteur":7,"assist":6},{"temps":"30:45","buteur":70,"assist":null},{"temps":"44:02","buteur":52,"assist":null},{"temps":"49:35","buteur":7,"assist":6}],"buts_contre":[{"temps":"33:23","buteur":76,"assist":null},{"temps":"47:53","buteur":30,"assist":76},{"temps":"49:14","buteur":2,"assist":null}],"pen_pour":[],"pen_contre":[],"domicile":true,"resultat":"victoire"},{"match_id":"112219","date":"2025-11-22","heure":"19:30","lieu":"SALLE PIERRE COULANGE","competition":"Nationale 3","phase":"Phase courante","adversaire":"TRICASTIN","adversaire_code":"01038","us_score":{"p1":3,"p2":12,"prol":3,"tab":0,"total":18},"adv_score":{"p1":1,"p2":0,"prol":0,"tab":0,"total":1},"buts_pour":[{"temps":"01:17","buteur":70,"assist":17},{"temps":"04:17","buteur":17,"assist":7},{"temps":"17:00","buteur":78,"assist":null},{"temps":"20:21","buteur":7,"assist":17},{"temps":"22:10","buteur":52,"assist":null},{"temps":"22:19","buteur":6,"assist":17},{"temps":"23:14","buteur":34,"assist":17},{"temps":"24:23","buteur":16,"assist":78},{"temps":"27:48","buteur":17,"assist":70},{"temps":"28:51","buteur":78,"assist":16},{"temps":"31:20","buteur":78,"assist":70},{"temps":"33:09","buteur":52,"assist":15},{"temps":"34:36","buteur":17,"assist":34},{"temps":"37:33","buteur":17,"assist":null},{"temps":"38:19","buteur":78,"assist":16},{"temps":"42:35","buteur":52,"assist":null},{"temps":"45:39","buteur":69,"assist":16},{"temps":"49:02","buteur":7,"assist":70}],"buts_contre":[{"temps":"16:38","buteur":15,"assist":null}],"pen_pour":[{"temps":"08:06","joueur":78,"code":"INC","min":2},{"temps":"42:00","joueur":78,"code":"MEC","min":10},{"temps":"43:54","joueur":6,"code":"DUR","min":2}],"pen_contre":[{"temps":"00:55","joueur":22,"code":"TRE","min":2},{"temps":"05:07","joueur":22,"code":"DUR","min":2},{"temps":"27:37","joueur":6,"code":"TRE","min":2},{"temps":"42:00","joueur":14,"code":"MEC","min":10},{"temps":"43:54","joueur":6,"code":"MEC","min":10},{"temps":"44:17","joueur":22,"code":"INC","min":2},{"temps":"44:17","joueur":22,"code":"MEC","min":10},{"temps":"48:25","joueur":7,"code":"RET","min":2}],"domicile":true,"resultat":"victoire"},{"match_id":"112181","date":"2025-10-11","heure":"20:00","lieu":"GYMNASE CONDORCET","competition":"Nationale 3","phase":"Phase courante","adversaire":"NÎMES","adversaire_code":"00689","us_score":{"p1":2,"p2":3,"prol":2,"tab":0,"total":7},"adv_score":{"p1":3,"p2":2,"prol":0,"tab":0,"total":5},"buts_pour":[{"temps":"10:28","buteur":17,"assist":70},{"temps":"12:05","buteur":10,"assist":null},{"temps":"27:42","buteur":7,"assist":null},{"temps":"31:37","buteur":17,"assist":70},{"temps":"32:21","buteur":6,"assist":19},{"temps":"47:19","buteur":2,"assist":null},{"temps":"48:29","buteur":34,"assist":null}],"buts_contre":[{"temps":"06:36","buteur":11,"assist":13},{"temps":"09:09","buteur":13,"assist":20},{"temps":"19:39","buteur":20,"assist":13},{"temps":"36:06","buteur":13,"assist":92},{"temps":"38:37","buteur":13,"assist":92}],"pen_pour":[{"temps":"07:23","joueur":2,"code":"INC","min":2},{"temps":"37:31","joueur":7,"code":"CIN","min":2}],"pen_contre":[{"temps":"29:50","joueur":22,"code":"TRE","min":2},{"temps":"40:40","joueur":30,"code":"INC","min":2},{"temps":"43:29","joueur":20,"code":"TRE","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"112176","date":"2025-09-27","heure":"19:30","lieu":"SALLE PIERRE COULANGE","competition":"Nationale 3","phase":"Phase courante","adversaire":"MONTPELLIER","adversaire_code":"00210","us_score":{"p1":2,"p2":2,"prol":4,"tab":0,"total":8},"adv_score":{"p1":3,"p2":2,"prol":2,"tab":0,"total":7},"buts_pour":[{"temps":"06:05","buteur":7,"assist":19},{"temps":"08:49","buteur":53,"assist":17},{"temps":"24:08","buteur":7,"assist":69},{"temps":"32:55","buteur":17,"assist":53},{"temps":"40:39","buteur":7,"assist":69},{"temps":"45:01","buteur":10,"assist":53},{"temps":"49:44","buteur":6,"assist":7},{"temps":"54:02","buteur":69,"assist":null}],"buts_contre":[{"temps":"11:22","buteur":85,"assist":7},{"temps":"16:41","buteur":54,"assist":85},{"temps":"19:54","buteur":85,"assist":null},{"temps":"22:28","buteur":7,"assist":null},{"temps":"26:40","buteur":7,"assist":null},{"temps":"44:07","buteur":91,"assist":null},{"temps":"47:16","buteur":54,"assist":null}],"pen_pour":[{"temps":"29:14","joueur":70,"code":"ACC","min":2},{"temps":"36:22","joueur":53,"code":"ACC","min":2},{"temps":"49:38","joueur":10,"code":"CBA","min":2}],"pen_contre":[{"temps":"32:40","joueur":88,"code":"ACC","min":2}],"domicile":true,"resultat":"victoire"},{"match_id":"112171","date":"2025-09-20","heure":"19:00","lieu":"Gymnase Jean Nicoli - Vignetta","competition":"Nationale 3","phase":"Phase courante","adversaire":"AJACCIO","adversaire_code":"01914","us_score":{"p1":1,"p2":10,"prol":2,"tab":0,"total":13},"adv_score":{"p1":2,"p2":0,"prol":1,"tab":0,"total":3},"buts_pour":[{"temps":"08:10","buteur":19,"assist":null},{"temps":"20:24","buteur":19,"assist":null},{"temps":"22:18","buteur":19,"assist":null},{"temps":"24:23","buteur":6,"assist":19},{"temps":"26:17","buteur":19,"assist":null},{"temps":"27:31","buteur":19,"assist":null},{"temps":"29:06","buteur":7,"assist":19},{"temps":"29:24","buteur":7,"assist":19},{"temps":"31:20","buteur":7,"assist":null},{"temps":"37:05","buteur":10,"assist":17},{"temps":"39:49","buteur":17,"assist":70},{"temps":"42:13","buteur":70,"assist":null},{"temps":"48:19","buteur":19,"assist":null}],"buts_contre":[{"temps":"04:09","buteur":83,"assist":24},{"temps":"05:49","buteur":24,"assist":25},{"temps":"47:54","buteur":25,"assist":23}],"pen_pour":[{"temps":"21:23","joueur":69,"code":"CRO","min":2},{"temps":"42:13","joueur":70,"code":"MEC","min":10}],"pen_contre":[{"temps":"01:21","joueur":11,"code":"CIN","min":2},{"temps":"10:01","joueur":25,"code":"CBA","min":2},{"temps":"16:08","joueur":11,"code":"TRE","min":2},{"temps":"37:38","joueur":83,"code":"TRE","min":2}],"domicile":false,"resultat":"victoire"},{"match_id":"112186","date":"2025-11-08","heure":"19:30","lieu":"SALLE PIERRE COULANGE","competition":"Nationale 3","phase":"Phase courante","adversaire":"ALBENC","adversaire_code":"00917","us_score":{"p1":1,"p2":3,"prol":3,"tab":0,"total":7},"adv_score":{"p1":2,"p2":1,"prol":1,"tab":0,"total":4},"buts_pour":[{"temps":"08:22","buteur":78,"assist":7},{"temps":"29:33","buteur":78,"assist":17},{"temps":"30:09","buteur":16,"assist":52},{"temps":"31:11","buteur":17,"assist":20},{"temps":"40:40","buteur":6,"assist":78},{"temps":"44:16","buteur":7,"assist":78},{"temps":"48:30","buteur":78,"assist":7}],"buts_contre":[{"temps":"02:16","buteur":70,"assist":24},{"temps":"16:07","buteur":9,"assist":1},{"temps":"35:31","buteur":92,"assist":8},{"temps":"46:45","buteur":10,"assist":null}],"pen_pour":[{"temps":"15:02","joueur":70,"code":"TRE","min":2},{"temps":"32:23","joueur":52,"code":"CIN","min":2},{"temps":"37:39","joueur":16,"code":"INC","min":2},{"temps":"45:52","joueur":69,"code":"INC","min":2},{"temps":"49:05","joueur":6,"code":"ANT","min":2}],"pen_contre":[{"temps":"16:36","joueur":77,"code":"INC","min":2},{"temps":"18:48","joueur":9,"code":"CIN","min":2},{"temps":"27:50","joueur":10,"code":"TRE","min":2},{"temps":"42:06","joueur":9,"code":"SUR","min":2},{"temps":"49:05","joueur":97,"code":"DUR","min":2}],"domicile":true,"resultat":"victoire"},{"match_id":"112212","date":"2025-11-01","heure":"18:00","lieu":"GYMNASE DU CHARREL - AUBAGNE","competition":"Nationale 3","phase":"Phase courante","adversaire":"AUBAGNE","adversaire_code":"00120","us_score":{"p1":0,"p2":1,"prol":6,"tab":0,"total":7},"adv_score":{"p1":1,"p2":4,"prol":0,"tab":0,"total":5},"buts_pour":[{"temps":"22:10","buteur":17,"assist":10},{"temps":"40:44","buteur":7,"assist":17},{"temps":"41:45","buteur":70,"assist":null},{"temps":"44:02","buteur":10,"assist":null},{"temps":"44:30","buteur":7,"assist":69},{"temps":"47:37","buteur":7,"assist":17},{"temps":"48:03","buteur":7,"assist":6}],"buts_contre":[{"temps":"11:52","buteur":7,"assist":null},{"temps":"21:40","buteur":7,"assist":null},{"temps":"24:52","buteur":8,"assist":null},{"temps":"35:03","buteur":7,"assist":8},{"temps":"38:42","buteur":96,"assist":null}],"pen_pour":[{"temps":"08:05","joueur":2,"code":"SUR","min":2},{"temps":"16:47","joueur":6,"code":"INC","min":2},{"temps":"24:30","joueur":70,"code":"TRE","min":2},{"temps":"24:56","joueur":19,"code":"DUR","min":2},{"temps":"34:08","joueur":7,"code":"INC","min":2}],"pen_contre":[{"temps":"22:02","joueur":10,"code":"CIN","min":2},{"temps":"24:56","joueur":72,"code":"CIN","min":2},{"temps":"25:49","joueur":8,"code":"ACC","min":2},{"temps":"39:31","joueur":8,"code":"INC","min":2},{"temps":"39:31","joueur":72,"code":"CIN","min":2},{"temps":"45:58","joueur":7,"code":"TRE","min":2},{"temps":"49:34","joueur":34,"code":"TRE","min":2}],"domicile":false,"resultat":"victoire"}];
+const HOME_VENUE = "SALLE PIERRE COULANGE";
+
+if(typeof Chart === "undefined"){
+  document.querySelector(".wrap").insertAdjacentHTML("afterbegin",
+    `<div class="card" style="border-color:#d64550;color:#b8323d;margin-bottom:1.5rem;">
+      Chart.js n'a pas pu se charger depuis le CDN (pas de connexion internet, ou ressource bloquée).
+      Les tableaux et le classement resteront fonctionnels, mais les graphiques ne s'afficheront pas.
+    </div>`);
+}
+
+function timeToMin(t){
+  const [m,s] = t.split(":").map(Number);
+  return m + s/60;
+}
+function bucketLabel(min){
+  const start = Math.floor(min/5)*5;
+  return start+"-"+(start+5);
+}
+function periodOf(min){
+  if(min < 25) return "1ère mi-temps";
+  if(min < 50) return "2e mi-temps";
+  return "Prolongation";
+}
+const CHART_COLORS = { pour:"#f2a93b", contre:"#d64550", home:"#3e7cb1", away:"#5b6b7a" };
+
+let charts = {};
+function destroyCharts(){ Object.values(charts).forEach(c=>c && c.destroy()); charts = {}; }
+const chartsReady = typeof Chart !== "undefined";
+
+function getFiltered(){
+  const lieu = document.getElementById("f-lieu").value;
+  const phase = document.getElementById("f-phase").value;
+  return DATA.filter(m=>{
+    if(lieu==="domicile" && !m.domicile) return false;
+    if(lieu==="exterieur" && m.domicile) return false;
+    if(phase!=="tous" && m.phase!==phase) return false;
+    return true;
+  });
+}
+
+function renderScoreboard(){
+  const v = DATA.filter(m=>m.resultat==="victoire").length;
+  const n = DATA.filter(m=>m.resultat==="nul").length;
+  const d = DATA.filter(m=>m.resultat==="defaite").length;
+  const bp = DATA.reduce((s,m)=>s+m.us_score.total,0);
+  const bc = DATA.reduce((s,m)=>s+m.adv_score.total,0);
+  const el = document.getElementById("scoreboard");
+  el.innerHTML = `
+    <div class="sb-cell"><div class="sb-label">Matchs</div><div class="sb-value">${DATA.length}</div></div>
+    <div class="sb-cell"><div class="sb-label">Bilan V-N-D</div><div class="sb-value small"><span class="vs">${v}</span>-<span class="ns">${n}</span>-<span class="ds">${d}</span></div></div>
+    <div class="sb-cell"><div class="sb-label">Buts pour</div><div class="sb-value">${bp}</div></div>
+    <div class="sb-cell"><div class="sb-label">Buts contre</div><div class="sb-value">${bc}</div></div>
+    <div class="sb-cell"><div class="sb-label">Différentiel</div><div class="sb-value">${bp-bc>0?"+":""}${bp-bc}</div></div>
+  `;
+}
+
+function renderKPIs(f){
+  const v = f.filter(m=>m.resultat==="victoire").length;
+  const n = f.filter(m=>m.resultat==="nul").length;
+  const d = f.filter(m=>m.resultat==="defaite").length;
+  const bp = f.reduce((s,m)=>s+m.us_score.total,0);
+  const bc = f.reduce((s,m)=>s+m.adv_score.total,0);
+  const penP = f.reduce((s,m)=>s+m.pen_pour.length,0);
+  const penC = f.reduce((s,m)=>s+m.pen_contre.length,0);
+  const items = [
+    ["Matchs", f.length],
+    ["Bilan", f.length? `${v}V ${n}N ${d}D` : "—"],
+    ["Buts / match", f.length? (bp/f.length).toFixed(1) : "—"],
+    ["Pénalités pour / contre", `${penP} / ${penC}`],
+  ];
+  document.getElementById("kpis").innerHTML = items.map(([l,vv])=>`
+    <div class="kpi"><div class="k-label">${l}</div><div class="k-value">${vv}</div></div>
+  `).join("");
+}
+
+function renderTiming(f){
+  if(!chartsReady) return;
+  const buckets = [];
+  for(let s=0; s<55; s+=5) buckets.push(s+"-"+(s+5));
+  const pour = buckets.map(()=>0), contre = buckets.map(()=>0);
+  f.forEach(m=>{
+    m.buts_pour.forEach(b=>{
+      const idx = Math.min(Math.floor(timeToMin(b.temps)/5), buckets.length-1);
+      pour[idx]++;
+    });
+    m.buts_contre.forEach(b=>{
+      const idx = Math.min(Math.floor(timeToMin(b.temps)/5), buckets.length-1);
+      contre[idx]++;
+    });
+  });
+  charts.timing = new Chart(document.getElementById("chartTiming"), {
+    type:"bar",
+    data:{ labels:buckets, datasets:[
+      {label:"Buts pour", data:pour, backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Buts contre", data:contre, backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{
+        x:{title:{display:true,text:"Minute de match",font:{family:"IBM Plex Mono",size:10}}, grid:{display:false}},
+        y:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}
+      }
+    }
+  });
+}
+
+function renderPeriod(f){
+  if(!chartsReady) return;
+  const labels = ["1ère mi-temps","2e mi-temps","Prolongation"];
+  const pour = [0,0,0], contre=[0,0,0];
+  f.forEach(m=>{
+    m.buts_pour.forEach(b=>{ pour[labels.indexOf(periodOf(timeToMin(b.temps)))]++; });
+    m.buts_contre.forEach(b=>{ contre[labels.indexOf(periodOf(timeToMin(b.temps)))]++; });
+  });
+  charts.period = new Chart(document.getElementById("chartPeriod"), {
+    type:"bar",
+    data:{ labels, datasets:[
+      {label:"Pour", data:pour, backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Contre", data:contre, backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      indexAxis:"y",
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{ x:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}, y:{grid:{display:false}} }
+    }
+  });
+}
+
+function renderTrend(f){
+  if(!chartsReady) return;
+  const sorted = [...f].sort((a,b)=> (a.date+a.heure).localeCompare(b.date+b.heure));
+  let cum = 0;
+  const points = sorted.map((m,i)=>{ cum += (m.us_score.total - m.adv_score.total); return cum; });
+  const labels = sorted.map((m,i)=> "M"+(i+1));
+  const pointColors = sorted.map(m=> m.resultat==="victoire" ? "#2c7a54" : m.resultat==="nul" ? "#9aa6b2" : "#b8323d");
+  charts.trend = new Chart(document.getElementById("chartTrend"), {
+    type:"line",
+    data:{ labels, datasets:[{
+      label:"Différentiel cumulé", data:points, borderColor:"#f2a93b", backgroundColor:"rgba(242,169,59,.12)",
+      fill:true, tension:.25, pointBackgroundColor:pointColors, pointRadius:4, pointHoverRadius:6,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{
+        title:(items)=> sorted[items[0].dataIndex] ? `${sorted[items[0].dataIndex].adversaire} (${sorted[items[0].dataIndex].date})` : "",
+        label:(item)=> `Différentiel cumulé : ${item.raw>0?"+":""}${item.raw}`
+      }}},
+      scales:{ x:{grid:{display:false}, ticks:{maxRotation:0, autoSkip:true}}, y:{beginAtZero:true, grid:{color:"#eee"}} }
+    }
+  });
+}
+
+function renderDomExt(){
+  const home = DATA.filter(m=>m.domicile);
+  const away = DATA.filter(m=>!m.domicile);
+  function card(title, list, extra){
+    const v=list.filter(m=>m.resultat==="victoire").length;
+    const n=list.filter(m=>m.resultat==="nul").length;
+    const d=list.filter(m=>m.resultat==="defaite").length;
+    const bp=list.reduce((s,m)=>s+m.us_score.total,0);
+    const bc=list.reduce((s,m)=>s+m.adv_score.total,0);
+    const pen=list.reduce((s,m)=>s+m.pen_pour.length,0);
+    return `
+      <h3>${title} <span style="opacity:.6;font-weight:400;">(${list.length} matchs)</span></h3>
+      <div class="dh-row"><span>Bilan V-N-D</span><b>${v}-${n}-${d}</b></div>
+      <div class="dh-row"><span>Buts pour / match</span><b>${list.length?(bp/list.length).toFixed(1):"—"}</b></div>
+      <div class="dh-row"><span>Buts contre / match</span><b>${list.length?(bc/list.length).toFixed(1):"—"}</b></div>
+      <div class="dh-row"><span>Différentiel total</span><b>${bp-bc>0?"+":""}${bp-bc}</b></div>
+      <div class="dh-row"><span>Pénalités / match</span><b>${list.length?(pen/list.length).toFixed(1):"—"}</b></div>
+    `;
+  }
+  document.getElementById("dh-home").innerHTML = card("Domicile", home);
+  document.getElementById("dh-away").innerHTML = card("Extérieur", away);
+}
+
+function renderPenCode(f){
+  if(!chartsReady) return;
+  const codesPour = {}, codesContre = {};
+  f.forEach(m=>{
+    m.pen_pour.forEach(p=>{ codesPour[p.code] = (codesPour[p.code]||0)+1; });
+    m.pen_contre.forEach(p=>{ codesContre[p.code] = (codesContre[p.code]||0)+1; });
+  });
+  const allCodes = Array.from(new Set([...Object.keys(codesPour), ...Object.keys(codesContre)]))
+    .sort((a,b)=> (codesPour[b]||0)+(codesContre[b]||0) - ((codesPour[a]||0)+(codesContre[a]||0)));
+  charts.penCode = new Chart(document.getElementById("chartPenCode"), {
+    type:"bar",
+    data:{ labels:allCodes, datasets:[
+      {label:"Pour", data:allCodes.map(c=>codesPour[c]||0), backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Contre", data:allCodes.map(c=>codesContre[c]||0), backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      indexAxis:"y",
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{ x:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}, y:{grid:{display:false}, ticks:{font:{family:"IBM Plex Mono", size:10}}} }
+    }
+  });
+}
+
+function renderPenTime(f){
+  if(!chartsReady) return;
+  const buckets = [];
+  for(let s=0; s<55; s+=5) buckets.push(s+"-"+(s+5));
+  const pour = buckets.map(()=>0), contre = buckets.map(()=>0);
+  f.forEach(m=>{
+    m.pen_pour.forEach(p=>{
+      const idx = Math.min(Math.floor(timeToMin(p.temps)/5), buckets.length-1);
+      pour[idx]++;
+    });
+    m.pen_contre.forEach(p=>{
+      const idx = Math.min(Math.floor(timeToMin(p.temps)/5), buckets.length-1);
+      contre[idx]++;
+    });
+  });
+  charts.penTime = new Chart(document.getElementById("chartPenTime"), {
+    type:"bar",
+    data:{ labels:buckets, datasets:[
+      {label:"Pour", data:pour, backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Contre", data:contre, backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{
+        x:{title:{display:true,text:"Minute de match",font:{family:"IBM Plex Mono",size:10}}, grid:{display:false}},
+        y:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}
+      }
+    }
+  });
+}
+
+function renderLeaders(f){
+  const goals = {}, assists = {};
+  f.forEach(m=>{
+    m.buts_pour.forEach(b=>{
+      goals[b.buteur] = (goals[b.buteur]||0)+1;
+      if(b.assist) assists[b.assist] = (assists[b.assist]||0)+1;
+    });
+  });
+  function renderList(obj, elId){
+    const entries = Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const max = entries.length? entries[0][1] : 1;
+    document.getElementById(elId).innerHTML = entries.length ? entries.map(([num,count])=>`
+      <div class="leader-row">
+        <div class="leader-num">${num}</div>
+        <div class="leader-bar-wrap"><div class="leader-bar-bg"><div class="leader-bar" style="width:${(count/max*100)}%"></div></div></div>
+        <div class="leader-val">${count}</div>
+      </div>
+    `).join("") : "<p class='section-note'>Aucune donnée pour ce filtre.</p>";
+  }
+  renderList(goals, "leaderScorers");
+  renderList(assists, "leaderAssists");
+}
+
+function renderTable(f){
+  const sorted = [...f].sort((a,b)=> (b.date+b.heure).localeCompare(a.date+a.heure));
+  const tbody = document.querySelector("#matchTable tbody");
+  tbody.innerHTML = sorted.map(m=>{
+    const badge = m.resultat==="victoire" ? "v" : m.resultat==="nul" ? "n" : "d";
+    const badgeText = m.resultat==="victoire" ? "V" : m.resultat==="nul" ? "N" : "D";
+    const dateFmt = new Date(m.date).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
+    return `<tr>
+      <td class="num">${dateFmt}</td>
+      <td>${m.adversaire}</td>
+      <td><span class="lieu-tag">${m.domicile? "Domicile":"Extérieur"}</span></td>
+      <td>${m.phase}</td>
+      <td class="num">${m.us_score.total} – ${m.adv_score.total}</td>
+      <td><span class="badge ${badge}">${badgeText}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+function renderAll(){
+  destroyCharts();
+  const f = getFiltered();
+  document.getElementById("f-count").textContent = f.length + " match" + (f.length>1?"s":"") + " sélectionné" + (f.length>1?"s":"");
+  renderKPIs(f);
+  renderTiming(f);
+  renderPeriod(f);
+  renderTrend(f);
+  renderPenCode(f);
+  renderPenTime(f);
+  renderLeaders(f);
+  renderTable(f);
+}
+
+renderScoreboard();
+renderDomExt();
+renderAll();
+document.getElementById("f-lieu").addEventListener("change", renderAll);
+document.getElementById("f-phase").addEventListener("change", renderAll);
+</script>
+</body>
+</html>
