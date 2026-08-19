@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aix en Provence Roller Hockey — Saison 2025-2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#171f2b;
+    --ice:#eef2f4;
+    --surface:#ffffff;
+    --amber:#f2a93b;
+    --amber-deep:#c9820f;
+    --red:#d64550;
+    --blue:#3e7cb1;
+    --slate:#5b6b7a;
+    --line:#dde3e7;
+    --line-dark:#2c3745;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ice);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- HERO / SCOREBOARD ---------- */
+  .hero{
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,.05), transparent 40%),
+      linear-gradient(180deg, var(--ink) 0%, #101720 100%);
+    color:#fff;
+    padding:2.6rem 1.4rem 2.2rem;
+    position:relative;
+    overflow:hidden;
+    border-bottom:4px solid var(--amber);
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 34px);
+    mask-image: radial-gradient(circle at 80% 10%, black, transparent 65%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative; max-width:1080px; margin:0 auto;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.72rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--amber); margin:0 0 .5rem;
+  }
+  .hero h1{font-size:clamp(1.7rem,5vw,2.6rem); margin:0 0 .25rem; line-height:1.05;}
+  .hero .sub{color:#aab6c2; font-size:.92rem; margin:0 0 1.6rem; font-family:'IBM Plex Sans',sans-serif; text-transform:none; letter-spacing:0;}
+
+  .scoreboard{
+    display:flex; flex-wrap:wrap; gap:0;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.03);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .sb-cell{
+    flex:1 1 110px;
+    padding:.9rem 1rem;
+    border-right:1px solid rgba(255,255,255,.1);
+  }
+  .sb-cell:last-child{border-right:none;}
+  .sb-label{font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:#8592a0; margin-bottom:.3rem;}
+  .sb-value{font-family:'Oswald',sans-serif; font-size:1.9rem; font-weight:600; line-height:1; color:var(--amber); font-variant-numeric:tabular-nums;}
+  .sb-value.small{font-size:1.3rem;}
+  .sb-value .vs{color:#5fb08a;}
+  .sb-value .ns{color:#9aa6b2;}
+  .sb-value .ds{color:var(--red);}
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{max-width:1080px; margin:0 auto; padding:1.6rem 1.4rem 4rem;}
+  .filters{
+    position:sticky; top:0; z-index:20;
+    background:rgba(238,242,244,.92);
+    backdrop-filter:blur(6px);
+    display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;
+    padding:.8rem 1.4rem;
+    border-bottom:1px solid var(--line);
+    margin:0 -1.4rem 1.8rem;
+  }
+  .filters label{font-family:'IBM Plex Mono',monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--slate); margin-right:.35rem;}
+  .filters select{
+    font-family:'IBM Plex Sans',sans-serif; font-size:.86rem;
+    padding:.4rem .6rem; border-radius:5px; border:1px solid var(--line);
+    background:#fff; color:var(--ink); cursor:pointer;
+  }
+  .filters .count{margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:.76rem; color:var(--slate);}
+
+  section{margin-bottom:2.6rem;}
+  .section-head{display:flex; align-items:baseline; gap:.6rem; margin-bottom:.9rem;}
+  .section-head h2{font-size:1.15rem; margin:0; color:var(--ink);}
+  .section-head .n{font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:var(--slate); text-transform:none; letter-spacing:0;}
+  .section-note{font-size:.8rem; color:var(--slate); margin:.4rem 0 0;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:1.1rem 1.2rem;}
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:1rem;}
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;}
+  .grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+  @media (max-width:760px){ .grid-2{grid-template-columns:1fr;} .grid-3{grid-template-columns:1fr;} .grid-4{grid-template-columns:repeat(2,1fr);} }
+
+  .kpi{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:.85rem .9rem;}
+  .kpi .k-label{font-family:'IBM Plex Mono',monospace; font-size:.64rem; text-transform:uppercase; letter-spacing:.08em; color:var(--slate);}
+  .kpi .k-value{font-family:'Oswald',sans-serif; font-size:1.5rem; font-weight:600; margin-top:.15rem; font-variant-numeric:tabular-nums;}
+
+  .chart-box{position:relative; height:230px;}
+  .chart-box.tall{height:280px;}
+
+  .dh-card{border-radius:10px; padding:1.1rem 1.2rem; color:#fff;}
+  .dh-card.home{background:linear-gradient(135deg,#274b6d,#1c3650);}
+  .dh-card.away{background:linear-gradient(135deg,#5b3a2e,#3f2620);}
+  .dh-card.po{background:linear-gradient(135deg,#4a3560,#2b1e3a); border:1px solid rgba(242,169,59,.35);}
+  .dh-card h3{margin:0 0 .7rem; font-size:.95rem; color:#fff;}
+  .dh-row{display:flex; justify-content:space-between; font-size:.84rem; padding:.28rem 0; border-bottom:1px solid rgba(255,255,255,.12);}
+  .dh-row:last-child{border-bottom:none;}
+  .dh-row b{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;}
+
+  table{width:100%; border-collapse:collapse; font-size:.85rem;}
+  th{text-align:left; font-family:'IBM Plex Mono',monospace; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--slate); padding:.5rem .5rem; border-bottom:1px solid var(--line);}
+  td{padding:.5rem .5rem; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .num{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;}
+  .badge{display:inline-block; padding:.15rem .5rem; border-radius:20px; font-size:.68rem; font-weight:600; font-family:'IBM Plex Mono',monospace;}
+  .badge.v{background:#e4f3ec; color:#2c7a54;}
+  .badge.n{background:#eef0f2; color:#5b6b7a;}
+  .badge.d{background:#fbe8ea; color:#b8323d;}
+  .lieu-tag{font-size:.7rem; color:var(--slate);}
+
+  .leader-row{display:flex; align-items:center; gap:.6rem; padding:.4rem 0; border-bottom:1px solid var(--line);}
+  .leader-row:last-child{border-bottom:none;}
+  .leader-num{width:2.1rem; height:2.1rem; border-radius:50%; background:var(--ink); color:var(--amber); display:flex; align-items:center; justify-content:center; font-family:'Oswald',sans-serif; font-weight:600; font-size:.9rem; flex-shrink:0;}
+  .leader-bar-wrap{flex:1;}
+  .leader-name{font-size:.82rem; font-weight:500;}
+  .leader-bar-bg{background:var(--line); border-radius:3px; height:8px; overflow:hidden; margin-top:.2rem;}
+  .leader-bar{height:100%; background:var(--amber); border-radius:3px;}
+  .leader-val{font-family:'IBM Plex Mono',monospace; font-size:.8rem; width:2.2rem; text-align:right; flex-shrink:0;}
+
+  footer{max-width:1080px; margin:0 auto; padding:1rem 1.4rem 2.5rem; color:var(--slate); font-size:.76rem;}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">RC Aix en Provence · Roller Hockey · Nationale 3</p>
+    <h1>Saison 2025 – 2026</h1>
+    <p class="sub">27 rencontres officielles · saison régulière, Coupe de France, phases finales et finales nationales à Rouen</p>
+    <div class="scoreboard" id="scoreboard"></div>
+  </div>
+</div>
+
+<div class="filters">
+  <div><label for="f-lieu">Lieu</label>
+    <select id="f-lieu">
+      <option value="tous">Tous</option>
+      <option value="domicile">Domicile</option>
+      <option value="exterieur">Extérieur</option>
+      <option value="neutre">Terrain neutre</option>
+    </select>
+  </div>
+  <div><label for="f-comp">Compétition</label>
+    <select id="f-comp">
+      <option value="tous">Tous les matchs</option>
+      <option value="reguliere">Saison régulière</option>
+      <option value="playoffs">Playoffs</option>
+      <option value="coupe">Coupe de France</option>
+    </select>
+  </div>
+  <div class="count" id="f-count"></div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <div class="grid-4" id="kpis"></div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Quand marquons-nous ?</h2></div>
+    <p class="section-note">Chaque barre compte les buts marqués (ambre) ou encaissés (rouge) durant cette tranche de 5 minutes, tous matchs de la sélection cumulés.</p>
+    <div class="card"><div class="chart-box tall"><canvas id="chartTiming"></canvas></div></div>
+    <p class="section-note">Saison régulière et Coupe de France : 2 mi-temps de 25 min, puis 5 min de prolongation en 3 contre 3 en cas d'égalité, et tirs au but si nécessaire. Playoffs (format plateau) : 2 mi-temps de 20 min, sans prolongation. Les périodes sont recalculées depuis l'horodatage de chaque but, car les colonnes par période des feuilles fédérales découpent à tort à 20:00/40:00 dans toutes les compétitions.</p>
+  </section>
+
+  <section>
+    <div class="grid-2">
+      <div>
+        <div class="section-head"><h2>Répartition par période</h2></div>
+        <p class="section-note">Buts marqués et encaissés par mi-temps. Les durées diffèrent selon la compétition (25 min en saison régulière, 20 min en playoffs), le découpage s'adapte match par match.</p>
+        <div class="card"><div class="chart-box"><canvas id="chartPeriod"></canvas></div></div>
+      </div>
+      <div>
+        <div class="section-head"><h2>Trajectoire de la saison</h2></div>
+        <p class="section-note">Un point par match, dans l'ordre chronologique. La courbe additionne l'écart de buts (pour − contre) match après match : elle monte quand on marque plus qu'on encaisse, descend dans le cas inverse. Couleur du point = résultat (vert victoire, gris nul, rouge défaite).</p>
+        <div class="card"><div class="chart-box"><canvas id="chartTrend"></canvas></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Domicile · Extérieur · Phases finales</h2><span class="n">indépendant des filtres ci-dessus</span></div>
+    <p class="section-note">Les trois cartes suivent les mêmes indicateurs et portent uniquement sur le championnat. Domicile et Extérieur couvrent la saison régulière ; Phases finales regroupe les 10 rencontres des quarts au match de classement, disputées sur terrain neutre. Les matchs de Coupe de France sont exclus de ces trois cartes et restent accessibles via le filtre Compétition.</p>
+    <div class="grid-3">
+      <div class="dh-card home" id="dh-home"></div>
+      <div class="dh-card away" id="dh-away"></div>
+      <div class="dh-card po" id="dh-po"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Supériorité &amp; infériorité numérique</h2></div>
+    <p class="section-note">Situation sur la glace au moment de chaque but, reconstituée à partir des pénalités en cours. Les méconduites (MEC) et exclusions (EXC) sont exclues du calcul : elles sont purgées par un remplaçant et ne mettent pas l'équipe en infériorité.</p>
+    <div class="grid-2">
+      <div class="card"><div class="chart-box"><canvas id="chartStrength"></canvas></div></div>
+      <div class="card" id="strengthStats"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Pénalités</h2></div>
+    <div class="grid-2">
+      <div>
+        <p class="section-note" style="margin:0 0 .5rem;">Par type de code — nombre de pénalités prises par nous (ambre) et par l'adversaire (rouge) pour chaque code d'infraction.</p>
+        <div class="card"><div class="chart-box tall"><canvas id="chartPenCode"></canvas></div></div>
+      </div>
+      <div>
+        <p class="section-note" style="margin:0 0 .5rem;">Dans le temps — mêmes pénalités, réparties par tranche de 5 minutes du match.</p>
+        <div class="card"><div class="chart-box tall"><canvas id="chartPenTime"></canvas></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid-2">
+      <div>
+        <div class="section-head"><h2>Meilleurs buteurs</h2></div>
+        <p class="section-note">Buts marqués sur la sélection filtrée. Agrégation par numéro de licence, donc fiable même quand un joueur change de maillot d'un match à l'autre.</p>
+        <div class="card" id="leaderScorers"></div>
+      </div>
+      <div>
+        <div class="section-head"><h2>Meilleurs passeurs</h2></div>
+        <p class="section-note">Passes décisives sur la sélection filtrée, agrégées de la même façon.</p>
+        <div class="card" id="leaderAssists"></div>
+      </div>
+    </div>
+    <p class="section-note">Classement par numéro de maillot (les noms n'étaient pas consolidés joueur par joueur dans cette première version).</p>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Gardiens</h2></div>
+    <p class="section-note">Temps de jeu réel de chaque gardien (relevé des changements sur la feuille) et buts encaissés pendant sa présence. La moyenne est ramenée à 50 minutes de jeu pour rendre les gardiens comparables malgré des temps très différents.</p>
+    <div class="card" style="overflow-x:auto;">
+      <table id="goalieTable">
+        <thead><tr>
+          <th>Gardien</th><th class="num">Temps de jeu</th><th class="num">Buts encaissés</th><th class="num">Moy. / 50 min</th><th class="num">Apparitions</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Tous les matchs</h2></div>
+    <div class="card" style="overflow-x:auto;">
+      <table id="matchTable">
+        <thead><tr>
+          <th>Date</th><th>Adversaire</th><th>Lieu</th><th>Phase</th><th class="num">Score</th><th>Résultat</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Données extraites des rapports officiels de match — Fédération Française de Roller & Skateboard. Généré pour un usage interne au club.
+</footer>
+
+<script>
+const DATA = [{"match_id":"137826","date":"2026-05-24","heure":"14:00","lieu":"ROUEN - MJC RIVE GAUCHE","phase":"Finale classement","adversaire":"RENNES","us_score":{"p1":0,"p2":2,"prol":0,"total":2},"adv_score":{"p1":1,"p2":3,"prol":0,"total":4},"buts_pour":[{"temps":"28:56","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":null,"passeur_nom":null},{"temps":"31:00","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"359584","passeur_nom":"Remy Hettmann"}],"buts_contre":[{"temps":"14:11","num":88,"situation":"egalite"},{"temps":"26:52","num":96,"situation":"egalite"},{"temps":"28:31","num":84,"situation":"egalite"},{"temps":"39:04","num":88,"situation":"egalite"}],"pen_pour":[{"temps":"14:38","joueur":70,"code":"DUR","min":2,"fin":"16:38","licence":"332791","nom":"Gabriel Merard"}],"pen_contre":[{"temps":"14:38","joueur":96,"code":"DUR","min":2,"fin":"16:38"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"defaite","gardiens":[{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":4}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137823","date":"2026-05-24","heure":"09:00","lieu":"ROUEN - MJC RIVE GAUCHE","phase":"Finale poules","adversaire":"RENNES","us_score":{"p1":3,"p2":3,"prol":0,"total":6},"adv_score":{"p1":0,"p2":6,"prol":0,"total":6},"buts_pour":[{"temps":"03:35","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"13:38","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"18:33","num":15,"situation":"superiorite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":null,"passeur_nom":null},{"temps":"25:32","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"32:11","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"36:52","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"359584","passeur_nom":"Remy Hettmann"}],"buts_contre":[{"temps":"23:31","num":83,"situation":"egalite"},{"temps":"26:10","num":77,"situation":"egalite"},{"temps":"32:39","num":61,"situation":"egalite"},{"temps":"33:10","num":61,"situation":"egalite"},{"temps":"33:40","num":76,"situation":"egalite"},{"temps":"39:11","num":77,"situation":"egalite"}],"pen_pour":[{"temps":"08:57","joueur":39,"code":"ACC","min":2,"fin":"10:57","licence":"237199","nom":"Remi Bourgault"},{"temps":"18:49","joueur":69,"code":"GEN","min":2,"fin":"20:49","licence":"151350","nom":"Lionel Prin-Abeil"},{"temps":"40:00","joueur":39,"code":"DUR","min":2,"fin":"40:00","licence":"237199","nom":"Remi Bourgault"}],"pen_contre":[{"temps":"18:10","joueur":61,"code":"CIN","min":2,"fin":"18:33"},{"temps":"40:00","joueur":88,"code":"DUR","min":2,"fin":"40:00"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"nul","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":6}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137821","date":"2026-05-23","heure":"19:00","lieu":"ROUEN - MJC RIVE GAUCHE","phase":"Finale poules","adversaire":"ROUEN","us_score":{"p1":3,"p2":2,"prol":0,"total":5},"adv_score":{"p1":3,"p2":2,"prol":0,"total":5},"buts_pour":[{"temps":"01:55","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"14:36","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":"237199","passeur_nom":"Remi Bourgault"},{"temps":"15:40","num":15,"situation":"superiorite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"26:49","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"33:33","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"00:58","num":79,"situation":"egalite"},{"temps":"09:18","num":28,"situation":"egalite"},{"temps":"13:24","num":91,"situation":"egalite"},{"temps":"25:35","num":97,"situation":"egalite"},{"temps":"35:50","num":28,"situation":"egalite"}],"pen_pour":[{"temps":"18:12","joueur":7,"code":"TRE","min":2,"fin":"20:12","licence":"263323","nom":"Quentin Mermerian-Berard"}],"pen_contre":[{"temps":"15:04","joueur":32,"code":"INC","min":2,"fin":"17:04"},{"temps":"39:42","joueur":91,"code":"TRE","min":2,"fin":"40:00"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"nul","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":5}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137820","date":"2026-05-23","heure":"15:30","lieu":"ROUEN - MJC RIVE GAUCHE","phase":"Finale poules","adversaire":"PESSAC","us_score":{"p1":1,"p2":2,"prol":0,"total":3},"adv_score":{"p1":1,"p2":3,"prol":0,"total":4},"buts_pour":[{"temps":"16:22","num":7,"situation":"superiorite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"28:16","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"151350","passeur_nom":"Lionel Prin-Abeil"},{"temps":"36:44","num":69,"situation":"egalite","buteur_licence":"151350","buteur_nom":"Lionel Prin-Abeil","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"04:09","num":78,"situation":"egalite"},{"temps":"24:30","num":25,"situation":"superiorite"},{"temps":"25:17","num":22,"situation":"egalite"},{"temps":"38:44","num":40,"situation":"egalite"}],"pen_pour":[{"temps":"22:34","joueur":70,"code":"SUR","min":2,"fin":"24:34","licence":"332791","nom":"Gabriel Merard"}],"pen_contre":[{"temps":"15:52","joueur":78,"code":"ACC","min":2,"fin":"16:22"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"defaite","gardiens":[{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":4}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137658","date":"2026-05-10","heure":"15:30","lieu":"GYMNASE DU CHARREL - AUBAGNE","phase":"Demi-finale","adversaire":"AUBAGNE","us_score":{"p1":2,"p2":0,"prol":0,"total":2},"adv_score":{"p1":1,"p2":1,"prol":0,"total":2},"buts_pour":[{"temps":"09:13","num":7,"situation":"superiorite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"15:09","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"14:16","num":11,"situation":"superiorite"},{"temps":"22:00","num":96,"situation":"egalite"}],"pen_pour":[{"temps":"03:44","joueur":39,"code":"OBS","min":2,"fin":"05:44","licence":"237199","nom":"Remi Bourgault"},{"temps":"13:48","joueur":16,"code":"TRE","min":2,"fin":"14:16","licence":"594283","nom":"Alexandre Clemencet"},{"temps":"26:28","joueur":16,"code":"TRE","min":2,"fin":"28:28","licence":"594283","nom":"Alexandre Clemencet"}],"pen_contre":[{"temps":"09:13","joueur":16,"code":"ACC","min":2,"fin":"09:13"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"nul","gardiens":[{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":2}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137656","date":"2026-05-10","heure":"10:30","lieu":"GYMNASE DU CHARREL - AUBAGNE","phase":"Demi-finale","adversaire":"SEYNOD","us_score":{"p1":6,"p2":1,"prol":0,"total":7},"adv_score":{"p1":0,"p2":2,"prol":0,"total":2},"buts_pour":[{"temps":"02:43","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":null,"passeur_nom":null},{"temps":"06:31","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":null,"passeur_nom":null},{"temps":"12:10","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"151350","passeur_nom":"Lionel Prin-Abeil"},{"temps":"13:07","num":10,"situation":"superiorite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"16:19","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"19:22","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"34:30","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"277045","passeur_nom":"Paul Cousinie"}],"buts_contre":[{"temps":"25:13","num":7,"situation":"superiorite"},{"temps":"37:52","num":7,"situation":"egalite"}],"pen_pour":[{"temps":"23:36","joueur":6,"code":"ACC","min":2,"fin":"25:13","licence":"237304","nom":"Arthur Rebreyend"},{"temps":"33:40","joueur":52,"code":"CBA","min":5,"fin":"38:40","licence":"237199","nom":"Remi Bourgault"},{"temps":"33:40","joueur":52,"code":"EXC","min":0,"fin":"33:40","licence":"237199","nom":"Remi Bourgault"}],"pen_contre":[{"temps":"12:29","joueur":9,"code":"ACC","min":2,"fin":"13:07"},{"temps":"33:40","joueur":21,"code":"ANT","min":2,"fin":"35:40"},{"temps":"36:26","joueur":18,"code":"HAU","min":2,"fin":"38:26"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":2}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137654","date":"2026-05-09","heure":"20:00","lieu":"GYMNASE DU CHARREL - AUBAGNE","phase":"Demi-finale","adversaire":"TARBES","us_score":{"p1":3,"p2":1,"prol":0,"total":4},"adv_score":{"p1":2,"p2":1,"prol":0,"total":3},"buts_pour":[{"temps":"08:57","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":null,"passeur_nom":null},{"temps":"11:40","num":7,"situation":"superiorite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"19:53","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"32:44","num":70,"situation":"superiorite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":"359584","passeur_nom":"Remy Hettmann"}],"buts_contre":[{"temps":"10:35","num":29,"situation":"egalite"},{"temps":"12:53","num":98,"situation":"egalite"},{"temps":"35:39","num":21,"situation":"egalite"}],"pen_pour":[{"temps":"22:57","joueur":16,"code":"TRE","min":2,"fin":"24:57","licence":"594283","nom":"Alexandre Clemencet"},{"temps":"27:05","joueur":70,"code":"OBS","min":2,"fin":"29:05","licence":"332791","nom":"Gabriel Merard"}],"pen_contre":[{"temps":"10:56","joueur":21,"code":"INC","min":2,"fin":"11:40"},{"temps":"30:57","joueur":29,"code":"SUR","min":2,"fin":"32:44"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"20:00","secondes":1200,"encaisses":2},{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"20:00","fin":"40:00","secondes":1200,"encaisses":1}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137275","date":"2026-04-19","heure":"15:30","lieu":"SALLE PIGNADA","phase":"1/4 de finale","adversaire":"ANGLET","us_score":{"p1":0,"p2":4,"prol":0,"total":4},"adv_score":{"p1":0,"p2":0,"prol":0,"total":0},"buts_pour":[{"temps":"23:40","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"28:41","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"35:42","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"36:03","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"}],"buts_contre":[],"pen_pour":[{"temps":"18:52","joueur":52,"code":"CIN","min":2,"fin":"20:52","licence":"237199","nom":"Remi Bourgault"},{"temps":"23:40","joueur":2,"code":"EQU","min":2,"fin":"25:40","licence":"415121","nom":"Sacha Peuvion"},{"temps":"33:16","joueur":17,"code":"ANT","min":2,"fin":"35:16","licence":"277045","nom":"Paul Cousinie"}],"pen_contre":[{"temps":"03:33","joueur":3,"code":"RET","min":2,"fin":"05:33"},{"temps":"22:37","joueur":11,"code":"ACC","min":2,"fin":"23:40"},{"temps":"33:16","joueur":77,"code":"ANT","min":2,"fin":"35:16"},{"temps":"40:00","joueur":3,"code":"MEC","min":10,"fin":"40:00"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"victoire","gardiens":[{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"30:21","secondes":1821,"encaisses":0},{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"30:21","fin":"40:00","secondes":579,"encaisses":0}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137272","date":"2026-04-19","heure":"09:00","lieu":"SALLE PIGNADA","phase":"1/4 de finale","adversaire":"GRENOBLE","us_score":{"p1":1,"p2":0,"prol":0,"total":1},"adv_score":{"p1":0,"p2":1,"prol":0,"total":1},"buts_pour":[{"temps":"03:21","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"}],"buts_contre":[{"temps":"23:54","num":12,"situation":"egalite"}],"pen_pour":[{"temps":"00:05","joueur":39,"code":"TRE","min":2,"fin":"02:05","licence":"237199","nom":"Remi Bourgault"},{"temps":"13:57","joueur":39,"code":"TRE","min":2,"fin":"15:57","licence":"237199","nom":"Remi Bourgault"},{"temps":"39:19","joueur":10,"code":"TRE","min":2,"fin":"40:00","licence":"414809","nom":"Liam Jullien"}],"pen_contre":[],"competition":"championnat","site":"neutre","domicile":false,"resultat":"nul","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":1}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"137270","date":"2026-04-18","heure":"18:00","lieu":"SALLE PIGNADA","phase":"1/4 de finale","adversaire":"BRETIGNY","us_score":{"p1":3,"p2":1,"prol":0,"total":4},"adv_score":{"p1":2,"p2":1,"prol":0,"total":3},"buts_pour":[{"temps":"05:47","num":20,"situation":"egalite","buteur_licence":"221684","buteur_nom":"Sebastien Richard","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"13:39","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"18:45","num":52,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":null,"passeur_nom":null},{"temps":"22:28","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"07:39","num":14,"situation":"egalite"},{"temps":"09:53","num":58,"situation":"inferiorite"},{"temps":"38:25","num":29,"situation":"egalite"}],"pen_pour":[{"temps":"32:50","joueur":70,"code":"CIN","min":2,"fin":"34:50","licence":"332791","nom":"Gabriel Merard"}],"pen_contre":[{"temps":"09:08","joueur":81,"code":"INC","min":2,"fin":"11:08"},{"temps":"32:50","joueur":14,"code":"CIN","min":2,"fin":"34:50"},{"temps":"34:02","joueur":77,"code":"OBS","min":2,"fin":"36:02"}],"competition":"championnat","site":"neutre","domicile":false,"resultat":"victoire","gardiens":[{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"40:00","secondes":2400,"encaisses":3}],"format":{"mi_temps":1200,"fin_reglementaire":2400,"prolongation":false}},{"match_id":"112223","date":"2026-03-14","heure":"19:30","lieu":"VARCES - Gymnase Lionel Terray","phase":"Phase courante","adversaire":"VARCES","us_score":{"p1":3,"p2":4,"prol":0,"total":7},"adv_score":{"p1":2,"p2":2,"prol":0,"total":4},"buts_pour":[{"temps":"04:24","num":39,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":null,"passeur_nom":null},{"temps":"06:29","num":2,"situation":"egalite","buteur_licence":"415121","buteur_nom":"Sacha Peuvion","passeur_licence":null,"passeur_nom":null},{"temps":"16:48","num":20,"situation":"inferiorite","buteur_licence":"221684","buteur_nom":"Sebastien Richard","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"33:03","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"34:27","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"237199","passeur_nom":"Remi Bourgault"},{"temps":"43:57","num":7,"situation":"superiorite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"46:37","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"}],"buts_contre":[{"temps":"04:33","num":24,"situation":"egalite"},{"temps":"19:51","num":25,"situation":"egalite"},{"temps":"30:52","num":25,"situation":"egalite"},{"temps":"48:17","num":2,"situation":"inferiorite"}],"pen_pour":[{"temps":"14:55","joueur":16,"code":"OBS","min":2,"fin":"16:55","licence":"594283","nom":"Alexandre Clemencet"},{"temps":"23:33","joueur":7,"code":"CIN","min":2,"fin":"25:33","licence":"263323","nom":"Quentin Mermerian-Berard"},{"temps":"45:44","joueur":39,"code":"ANT","min":2,"fin":"47:44","licence":"237199","nom":"Remi Bourgault"}],"pen_contre":[{"temps":"27:12","joueur":3,"code":"ACC","min":2,"fin":"29:12"},{"temps":"28:42","joueur":25,"code":"RET","min":2,"fin":"30:42"},{"temps":"43:10","joueur":25,"code":"DUR","min":2,"fin":"43:57"},{"temps":"45:44","joueur":30,"code":"ANT","min":2,"fin":"47:44"},{"temps":"47:24","joueur":24,"code":"TRE","min":2,"fin":"49:24"}],"competition":"championnat","site":"exterieur","domicile":false,"resultat":"victoire","gardiens":[{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"44:06","secondes":2646,"encaisses":3},{"num":"1","licence":"397416","nom":"Thomas Benard","debut":"44:06","fin":"50:00","secondes":354,"encaisses":1}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112214","date":"2026-02-14","heure":"19:00","lieu":"Gymnase Pigneguy - VOREPPE","phase":"Phase courante","adversaire":"ALBENC","us_score":{"p1":2,"p2":4,"prol":0,"total":6},"adv_score":{"p1":1,"p2":0,"prol":0,"total":1},"buts_pour":[{"temps":"01:30","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"10:54","num":15,"situation":"superiorite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"39:13","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"43:32","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":null,"passeur_nom":null},{"temps":"45:27","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"45:54","num":39,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"}],"buts_contre":[{"temps":"16:30","num":1,"situation":"egalite"}],"pen_pour":[{"temps":"25:00","joueur":39,"code":"HAU","min":2,"fin":"27:00","licence":"237199","nom":"Remi Bourgault"},{"temps":"30:39","joueur":78,"code":"TRE","min":2,"fin":"32:39","licence":"359584","nom":"Remy Hettmann"},{"temps":"40:31","joueur":39,"code":"ACC","min":2,"fin":"42:31","licence":"237199","nom":"Remi Bourgault"},{"temps":"46:17","joueur":70,"code":"OBS","min":2,"fin":"48:17","licence":"332791","nom":"Gabriel Merard"},{"temps":"49:58","joueur":6,"code":"MEC","min":10,"fin":"50:00","licence":"237304","nom":"Arthur Rebreyend"}],"pen_contre":[{"temps":"09:21","joueur":10,"code":"TRE","min":2,"fin":"11:21"},{"temps":"28:01","joueur":77,"code":"CRO","min":2,"fin":"30:01"},{"temps":"34:42","joueur":24,"code":"HAU","min":2,"fin":"36:42"},{"temps":"49:58","joueur":9,"code":"MEC","min":10,"fin":"50:00"}],"competition":"championnat","site":"exterieur","domicile":false,"resultat":"victoire","gardiens":[{"num":"41","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"45:54","secondes":2754,"encaisses":1},{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"45:54","fin":"50:00","secondes":246,"encaisses":0}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112184","date":"2026-01-31","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"Phase courante","adversaire":"AUBAGNE","us_score":{"p1":3,"p2":2,"prol":0,"total":5},"adv_score":{"p1":2,"p2":0,"prol":0,"total":2},"buts_pour":[{"temps":"06:43","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"07:19","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"237199","passeur_nom":"Remi Bourgault"},{"temps":"12:48","num":70,"situation":"superiorite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"36:28","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"221684","passeur_nom":"Sebastien Richard"},{"temps":"47:35","num":70,"situation":"egalite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"11:34","num":89,"situation":"egalite"},{"temps":"20:37","num":7,"situation":"superiorite"}],"pen_pour":[{"temps":"20:00","joueur":6,"code":"TRE","min":2,"fin":"20:37","licence":"237304","nom":"Arthur Rebreyend"},{"temps":"37:21","joueur":15,"code":"HAU","min":2,"fin":"39:21","licence":"137725","nom":"Alexis Nicolaÿ"},{"temps":"40:40","joueur":16,"code":"INC","min":2,"fin":"42:40","licence":"594283","nom":"Alexandre Clemencet"}],"pen_contre":[{"temps":"11:52","joueur":32,"code":"CBA","min":2,"fin":"12:48"},{"temps":"43:16","joueur":8,"code":"SUR","min":2,"fin":"45:16"}],"competition":"championnat","site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"48:22","secondes":2902,"encaisses":2},{"num":"21","licence":"078026","nom":"Francois Mallet","debut":"48:22","fin":"50:00","secondes":98,"encaisses":0}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112209","date":"2026-01-17","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"Phase courante","adversaire":"NÎMES","us_score":{"p1":8,"p2":6,"prol":0,"total":14},"adv_score":{"p1":4,"p2":3,"prol":0,"total":7},"buts_pour":[{"temps":"01:44","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":null,"passeur_nom":null},{"temps":"05:19","num":15,"situation":"superiorite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"08:56","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"12:10","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"13:33","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":null,"passeur_nom":null},{"temps":"21:42","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"23:10","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"24:36","num":25,"situation":"egalite","buteur_licence":"147790","buteur_nom":"Mael Budiartha","passeur_licence":null,"passeur_nom":null},{"temps":"26:24","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"29:24","num":52,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":null,"passeur_nom":null},{"temps":"33:08","num":52,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"33:24","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"38:03","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"38:24","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"151350","passeur_nom":"Lionel Prin-Abeil"}],"buts_contre":[{"temps":"04:04","num":22,"situation":"egalite"},{"temps":"04:39","num":55,"situation":"egalite"},{"temps":"18:25","num":22,"situation":"egalite"},{"temps":"21:25","num":30,"situation":"egalite"},{"temps":"29:40","num":22,"situation":"egalite"},{"temps":"39:55","num":30,"situation":"egalite"},{"temps":"41:36","num":22,"situation":"egalite"}],"pen_pour":[{"temps":"42:31","joueur":52,"code":"INC","min":2,"fin":"44:31","licence":"237199","nom":"Remi Bourgault"}],"pen_contre":[{"temps":"04:50","joueur":29,"code":"TRE","min":2,"fin":"05:19"},{"temps":"09:34","joueur":29,"code":"RET","min":2,"fin":"11:34"}],"competition":"championnat","site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":7}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112204","date":"2026-01-10","heure":"18:00","lieu":"Complexe sportif Albert Batteux","phase":"Phase courante","adversaire":"MONTPELLIER","us_score":{"p1":2,"p2":6,"prol":0,"total":8},"adv_score":{"p1":0,"p2":2,"prol":0,"total":2},"buts_pour":[{"temps":"09:32","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"22:01","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"25:32","num":39,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"36:40","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"37:10","num":70,"situation":"egalite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"40:47","num":39,"situation":"superiorite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"42:30","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"47:17","num":15,"situation":"superiorite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"277045","passeur_nom":"Paul Cousinie"}],"buts_contre":[{"temps":"32:54","num":31,"situation":"egalite"},{"temps":"46:55","num":54,"situation":"inferiorite"}],"pen_pour":[],"pen_contre":[{"temps":"40:10","joueur":9,"code":"OBS","min":2,"fin":"40:47"},{"temps":"46:55","joueur":93,"code":"ANT","min":2,"fin":"47:17"}],"competition":"championnat","site":"exterieur","domicile":false,"resultat":"victoire","gardiens":[{"num":"41","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"25:00","secondes":1500,"encaisses":0},{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"25:00","fin":"50:00","secondes":1500,"encaisses":2}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112191","date":"2026-03-07","heure":"18:00","lieu":"SAINT-PAUL-TROIS-CHATEAUX - Halle Marcel Gony","phase":"Phase courante","adversaire":"TRICASTIN","us_score":{"p1":7,"p2":5,"prol":0,"total":12},"adv_score":{"p1":1,"p2":2,"prol":0,"total":3},"buts_pour":[{"temps":"01:56","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"13:15","num":16,"situation":"superiorite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"14:27","num":16,"situation":"superiorite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"17:46","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"19:25","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"22:09","num":2,"situation":"egalite","buteur_licence":"415121","buteur_nom":"Sacha Peuvion","passeur_licence":null,"passeur_nom":null},{"temps":"24:41","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"26:17","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"27:08","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"28:27","num":19,"situation":"egalite","buteur_licence":"147790","buteur_nom":"Mael Budiartha","passeur_licence":null,"passeur_nom":null},{"temps":"32:50","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"41:29","num":39,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"18:08","num":95,"situation":"egalite"},{"temps":"25:54","num":66,"situation":"egalite"},{"temps":"39:22","num":91,"situation":"egalite"}],"pen_pour":[{"temps":"08:43","joueur":7,"code":"RET","min":2,"fin":"10:43","licence":"263323","nom":"Quentin Mermerian-Berard"},{"temps":"35:09","joueur":39,"code":"CIN","min":2,"fin":"37:09","licence":"237199","nom":"Remi Bourgault"}],"pen_contre":[{"temps":"12:05","joueur":66,"code":"TRE","min":2,"fin":"13:15"},{"temps":"12:43","joueur":7,"code":"RET","min":2,"fin":"14:27"}],"competition":"championnat","site":"exterieur","domicile":false,"resultat":"victoire","gardiens":[{"num":"31","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":3}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112199","date":"2025-12-13","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"Phase courante","adversaire":"AJACCIO","us_score":{"p1":3,"p2":3,"prol":0,"total":6},"adv_score":{"p1":1,"p2":2,"prol":0,"total":3},"buts_pour":[{"temps":"06:04","num":17,"situation":"superiorite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"10:30","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null},{"temps":"23:59","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"38:05","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"237304","passeur_nom":"Arthur Rebreyend"},{"temps":"44:46","num":34,"situation":"egalite","buteur_licence":"329146","buteur_nom":"Julien Pico","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"47:47","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"}],"buts_contre":[{"temps":"15:18","num":25,"situation":"superiorite"},{"temps":"33:02","num":83,"situation":"superiorite"},{"temps":"48:31","num":24,"situation":"egalite"}],"pen_pour":[{"temps":"03:34","joueur":2,"code":"TRE","min":2,"fin":"05:34","licence":"415121","nom":"Sacha Peuvion"},{"temps":"14:04","joueur":70,"code":"HAU","min":2,"fin":"15:18","licence":"332791","nom":"Gabriel Merard"},{"temps":"26:12","joueur":52,"code":"CIN","min":2,"fin":"28:12","licence":"237199","nom":"Remi Bourgault"},{"temps":"32:28","joueur":69,"code":"DUR","min":2,"fin":"33:02","licence":"151350","nom":"Lionel Prin-Abeil"}],"pen_contre":[{"temps":"05:33","joueur":25,"code":"TRE","min":2,"fin":"06:04"},{"temps":"25:48","joueur":44,"code":"TRE","min":2,"fin":"27:48"}],"competition":"championnat","site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"21","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"25:00","secondes":1500,"encaisses":1},{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"25:00","fin":"50:00","secondes":1500,"encaisses":2}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112195","date":"2025-12-06","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"Phase courante","adversaire":"VARCES","us_score":{"p1":2,"p2":3,"prol":0,"total":5},"adv_score":{"p1":0,"p2":3,"prol":0,"total":3},"buts_pour":[{"temps":"05:27","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"07:37","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"237304","passeur_nom":"Arthur Rebreyend"},{"temps":"30:45","num":70,"situation":"egalite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":null,"passeur_nom":null},{"temps":"44:02","num":52,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":null,"passeur_nom":null},{"temps":"49:35","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"237304","passeur_nom":"Arthur Rebreyend"}],"buts_contre":[{"temps":"33:23","num":76,"situation":"egalite"},{"temps":"47:53","num":30,"situation":"egalite"},{"temps":"49:14","num":2,"situation":"egalite"}],"pen_pour":[],"pen_contre":[],"competition":"championnat","site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"21","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"25:00","secondes":1500,"encaisses":0},{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"25:00","fin":"50:00","secondes":1500,"encaisses":3}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112219","date":"2025-11-22","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"Phase courante","adversaire":"TRICASTIN","us_score":{"p1":8,"p2":10,"prol":0,"total":18},"adv_score":{"p1":1,"p2":0,"prol":0,"total":1},"buts_pour":[{"temps":"01:17","num":70,"situation":"superiorite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"04:17","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"17:00","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null},{"temps":"20:21","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"22:10","num":52,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":null,"passeur_nom":null},{"temps":"22:19","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"23:14","num":34,"situation":"egalite","buteur_licence":"329146","buteur_nom":"Julien Pico","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"24:23","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"27:48","num":17,"situation":"superiorite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"28:51","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"31:20","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"33:09","num":52,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":"137725","passeur_nom":"Alexis Nicolaÿ"},{"temps":"34:36","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"37:33","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":null,"passeur_nom":null},{"temps":"38:19","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"42:35","num":52,"situation":"egalite","buteur_licence":"237199","buteur_nom":"Remi Bourgault","passeur_licence":null,"passeur_nom":null},{"temps":"45:39","num":69,"situation":"inferiorite","buteur_licence":"151350","buteur_nom":"Lionel Prin-Abeil","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"49:02","num":7,"situation":"superiorite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"332791","passeur_nom":"Gabriel Merard"}],"buts_contre":[{"temps":"16:38","num":15,"situation":"egalite"}],"pen_pour":[{"temps":"08:06","joueur":78,"code":"INC","min":2,"fin":"10:06","licence":"359584","nom":"Remy Hettmann"},{"temps":"42:00","joueur":78,"code":"MEC","min":10,"fin":"50:00","licence":"359584","nom":"Remy Hettmann"},{"temps":"43:54","joueur":6,"code":"DUR","min":2,"fin":"45:54","licence":"237304","nom":"Arthur Rebreyend"}],"pen_contre":[{"temps":"00:55","joueur":22,"code":"TRE","min":2,"fin":"01:17"},{"temps":"05:07","joueur":22,"code":"DUR","min":2,"fin":"07:07"},{"temps":"27:39","joueur":6,"code":"TRE","min":2,"fin":"27:48"},{"temps":"42:00","joueur":14,"code":"MEC","min":10,"fin":"50:00"},{"temps":"43:54","joueur":6,"code":"MEC","min":10,"fin":"50:00"},{"temps":"44:17","joueur":22,"code":"INC","min":2,"fin":"45:38"},{"temps":"46:17","joueur":22,"code":"MEC","min":10,"fin":"50:00"},{"temps":"48:25","joueur":7,"code":"RET","min":2,"fin":"49:02"}],"competition":"championnat","site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"21","licence":"078026","nom":"Francois Mallet","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":1}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112181","date":"2025-10-11","heure":"20:00","lieu":"GYMNASE CONDORCET","phase":"Phase courante","adversaire":"NÎMES","us_score":{"p1":2,"p2":5,"prol":0,"total":7},"adv_score":{"p1":3,"p2":2,"prol":0,"total":5},"buts_pour":[{"temps":"10:28","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"12:05","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":null,"passeur_nom":null},{"temps":"27:42","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":null,"passeur_nom":null},{"temps":"31:37","num":17,"situation":"superiorite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"32:21","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"47:19","num":2,"situation":"egalite","buteur_licence":"415121","buteur_nom":"Sacha Peuvion","passeur_licence":null,"passeur_nom":null},{"temps":"48:29","num":34,"situation":"egalite","buteur_licence":"329146","buteur_nom":"Julien Pico","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"06:36","num":11,"situation":"egalite"},{"temps":"09:09","num":13,"situation":"superiorite"},{"temps":"19:39","num":20,"situation":"egalite"},{"temps":"36:06","num":13,"situation":"egalite"},{"temps":"38:37","num":13,"situation":"superiorite"}],"pen_pour":[{"temps":"07:23","joueur":2,"code":"INC","min":2,"fin":"09:09","licence":"415121","nom":"Sacha Peuvion"},{"temps":"37:31","joueur":7,"code":"CIN","min":2,"fin":"38:37","licence":"263323","nom":"Quentin Mermerian-Berard"}],"pen_contre":[{"temps":"29:50","joueur":22,"code":"TRE","min":2,"fin":"31:37"},{"temps":"40:40","joueur":30,"code":"INC","min":2,"fin":"42:40"},{"temps":"43:29","joueur":20,"code":"TRE","min":2,"fin":"45:29"}],"competition":"championnat","site":"exterieur","domicile":false,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":5}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112176","date":"2025-09-27","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"Phase courante","adversaire":"MONTPELLIER","us_score":{"p1":3,"p2":4,"prol":1,"total":8},"adv_score":{"p1":4,"p2":3,"prol":0,"total":7},"buts_pour":[{"temps":"06:05","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"08:49","num":53,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"24:08","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"151350","passeur_nom":"Lionel Prin-Abeil"},{"temps":"32:55","num":17,"situation":"superiorite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"40:39","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"151350","passeur_nom":"Lionel Prin-Abeil"},{"temps":"45:01","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"594283","passeur_nom":"Alexandre Clemencet"},{"temps":"49:44","num":6,"situation":"inferiorite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"54:02","num":69,"situation":"egalite","buteur_licence":"151350","buteur_nom":"Lionel Prin-Abeil","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"11:22","num":85,"situation":"egalite"},{"temps":"16:41","num":54,"situation":"egalite"},{"temps":"19:54","num":85,"situation":"egalite"},{"temps":"22:28","num":7,"situation":"egalite"},{"temps":"26:40","num":7,"situation":"egalite"},{"temps":"44:07","num":91,"situation":"egalite"},{"temps":"47:16","num":54,"situation":"egalite"}],"pen_pour":[{"temps":"29:14","joueur":70,"code":"ACC","min":2,"fin":"31:14","licence":"332791","nom":"Gabriel Merard"},{"temps":"36:22","joueur":53,"code":"ACC","min":2,"fin":"38:22","licence":"594283","nom":"Alexandre Clemencet"},{"temps":"49:38","joueur":10,"code":"CBA","min":2,"fin":"51:38","licence":"414809","nom":"Liam Jullien"}],"pen_contre":[{"temps":"32:40","joueur":88,"code":"ACC","min":2,"fin":"34:40"}],"competition":"championnat","site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"54:02","secondes":3242,"encaisses":7}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112171","date":"2025-09-20","heure":"19:00","lieu":"Gymnase Jean Nicoli - Vignetta","phase":"Phase courante","adversaire":"AJACCIO","us_score":{"p1":4,"p2":9,"prol":0,"total":13},"adv_score":{"p1":2,"p2":1,"prol":0,"total":3},"buts_pour":[{"temps":"08:10","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null},{"temps":"20:24","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null},{"temps":"22:18","num":19,"situation":"inferiorite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null},{"temps":"24:23","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"26:17","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null},{"temps":"27:31","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null},{"temps":"29:06","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"29:24","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"31:20","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":null,"passeur_nom":null},{"temps":"37:05","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"39:49","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"42:13","num":70,"situation":"egalite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":null,"passeur_nom":null},{"temps":"48:19","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":null,"passeur_nom":null}],"buts_contre":[{"temps":"04:09","num":83,"situation":"egalite"},{"temps":"05:49","num":24,"situation":"egalite"},{"temps":"47:54","num":25,"situation":"egalite"}],"pen_pour":[{"temps":"21:23","joueur":69,"code":"CRO","min":2,"fin":"23:23","licence":"151350","nom":"Lionel Prin-Abeil"},{"temps":"42:13","joueur":70,"code":"MEC","min":10,"fin":"50:00","licence":"332791","nom":"Gabriel Merard"}],"pen_contre":[{"temps":"01:21","joueur":11,"code":"CIN","min":2,"fin":"03:21"},{"temps":"10:01","joueur":25,"code":"CBA","min":2,"fin":"12:01"},{"temps":"16:08","joueur":11,"code":"TRE","min":2,"fin":"18:08"},{"temps":"37:38","joueur":83,"code":"TRE","min":2,"fin":"39:38"}],"competition":"championnat","site":"exterieur","domicile":false,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":3}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112186","date":"2025-11-08","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"Phase courante","adversaire":"ALBENC","us_score":{"p1":1,"p2":6,"prol":0,"total":7},"adv_score":{"p1":2,"p2":2,"prol":0,"total":4},"buts_pour":[{"temps":"08:22","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"29:33","num":78,"situation":"superiorite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"30:09","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":"237199","passeur_nom":"Remi Bourgault"},{"temps":"31:11","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"221684","passeur_nom":"Sebastien Richard"},{"temps":"40:40","num":6,"situation":"egalite","buteur_licence":"237304","buteur_nom":"Arthur Rebreyend","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"44:16","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"48:30","num":78,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"}],"buts_contre":[{"temps":"02:16","num":70,"situation":"egalite"},{"temps":"16:07","num":9,"situation":"superiorite"},{"temps":"35:31","num":92,"situation":"egalite"},{"temps":"46:45","num":10,"situation":"superiorite"}],"pen_pour":[{"temps":"15:02","joueur":70,"code":"TRE","min":2,"fin":"16:07","licence":"332791","nom":"Gabriel Merard"},{"temps":"32:23","joueur":52,"code":"CIN","min":2,"fin":"34:23","licence":"237199","nom":"Remi Bourgault"},{"temps":"37:39","joueur":16,"code":"INC","min":2,"fin":"39:39","licence":"594283","nom":"Alexandre Clemencet"},{"temps":"45:52","joueur":69,"code":"INC","min":2,"fin":"46:45","licence":"151350","nom":"Lionel Prin-Abeil"},{"temps":"49:05","joueur":6,"code":"ANT","min":2,"fin":"50:00","licence":"237304","nom":"Arthur Rebreyend"}],"pen_contre":[{"temps":"16:36","joueur":77,"code":"INC","min":2,"fin":"18:36"},{"temps":"18:48","joueur":9,"code":"CIN","min":2,"fin":"20:48"},{"temps":"27:50","joueur":10,"code":"TRE","min":2,"fin":"29:33"},{"temps":"42:06","joueur":9,"code":"SUR","min":2,"fin":"44:06"},{"temps":"49:05","joueur":97,"code":"DUR","min":2,"fin":"50:00"}],"competition":"championnat","site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"1","licence":"397416","nom":"Thomas Benard","debut":"00:00","fin":"42:05","secondes":2525,"encaisses":3},{"num":"21","licence":"078026","nom":"Francois Mallet","debut":"42:05","fin":"50:00","secondes":475,"encaisses":1}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"112212","date":"2025-11-01","heure":"18:00","lieu":"GYMNASE DU CHARREL - AUBAGNE","phase":"Phase courante","adversaire":"AUBAGNE","us_score":{"p1":1,"p2":6,"prol":0,"total":7},"adv_score":{"p1":3,"p2":2,"prol":0,"total":5},"buts_pour":[{"temps":"22:10","num":17,"situation":"superiorite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"40:44","num":7,"situation":"superiorite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"41:45","num":70,"situation":"egalite","buteur_licence":"332791","buteur_nom":"Gabriel Merard","passeur_licence":null,"passeur_nom":null},{"temps":"44:02","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":null,"passeur_nom":null},{"temps":"44:30","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"151350","passeur_nom":"Lionel Prin-Abeil"},{"temps":"47:37","num":7,"situation":"superiorite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"277045","passeur_nom":"Paul Cousinie"},{"temps":"48:03","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"237304","passeur_nom":"Arthur Rebreyend"}],"buts_contre":[{"temps":"11:52","num":7,"situation":"egalite"},{"temps":"21:40","num":7,"situation":"egalite"},{"temps":"24:52","num":8,"situation":"superiorite"},{"temps":"35:03","num":7,"situation":"superiorite"},{"temps":"38:42","num":96,"situation":"egalite"}],"pen_pour":[{"temps":"08:05","joueur":2,"code":"SUR","min":2,"fin":"10:05","licence":"415121","nom":"Sacha Peuvion"},{"temps":"16:47","joueur":6,"code":"INC","min":2,"fin":"18:47","licence":"237304","nom":"Arthur Rebreyend"},{"temps":"24:30","joueur":70,"code":"TRE","min":2,"fin":"26:30","licence":"332791","nom":"Gabriel Merard"},{"temps":"24:56","joueur":19,"code":"DUR","min":2,"fin":"26:56","licence":"359584","nom":"Remy Hettmann"},{"temps":"34:08","joueur":7,"code":"INC","min":2,"fin":"35:03","licence":"263323","nom":"Quentin Mermerian-Berard"}],"pen_contre":[{"temps":"22:02","joueur":10,"code":"CIN","min":2,"fin":"22:10"},{"temps":"24:56","joueur":72,"code":"CIN","min":2,"fin":"26:56"},{"temps":"25:49","joueur":8,"code":"ACC","min":2,"fin":"27:49"},{"temps":"39:31","joueur":8,"code":"INC","min":2,"fin":"40:44"},{"temps":"39:31","joueur":72,"code":"CIN","min":2,"fin":"41:31"},{"temps":"45:58","joueur":7,"code":"TRE","min":2,"fin":"47:37"},{"temps":"49:34","joueur":34,"code":"TRE","min":2,"fin":"50:00"}],"competition":"championnat","site":"exterieur","domicile":false,"resultat":"victoire","gardiens":[{"num":"1","licence":"397416","nom":"Thomas Benard","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":5}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"118665","date":"2025-10-04","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"1/128e de finale","competition":"coupe","adversaire":"TRICASTIN","us_score":{"p1":5,"p2":11,"prol":0,"total":16},"adv_score":{"p1":0,"p2":0,"prol":0,"total":0},"buts_pour":[{"temps":"02:04","num":2,"situation":"egalite","buteur_licence":"415121","buteur_nom":"Sacha Peuvion","passeur_licence":"329146","passeur_nom":"Julien Pico"},{"temps":"08:23","num":69,"situation":"egalite","buteur_licence":"151350","buteur_nom":"Lionel Prin-Abeil","passeur_licence":"221684","passeur_nom":"Sebastien Richard"},{"temps":"12:17","num":34,"situation":"egalite","buteur_licence":"329146","buteur_nom":"Julien Pico","passeur_licence":"185430","passeur_nom":"Bastien Faur"},{"temps":"14:22","num":26,"situation":"egalite","buteur_licence":"185430","buteur_nom":"Bastien Faur","passeur_licence":null,"passeur_nom":null},{"temps":"20:58","num":20,"situation":"inferiorite","buteur_licence":"221684","buteur_nom":"Sebastien Richard","passeur_licence":null,"passeur_nom":null},{"temps":"25:36","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"28:26","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":null,"passeur_nom":null},{"temps":"31:06","num":7,"situation":"egalite","buteur_licence":"263323","buteur_nom":"Quentin Mermerian-Berard","passeur_licence":"151350","passeur_nom":"Lionel Prin-Abeil"},{"temps":"31:54","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"34:32","num":19,"situation":"superiorite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"221684","passeur_nom":"Sebastien Richard"},{"temps":"38:33","num":69,"situation":"inferiorite","buteur_licence":"151350","buteur_nom":"Lionel Prin-Abeil","passeur_licence":"221684","passeur_nom":"Sebastien Richard"},{"temps":"45:51","num":26,"situation":"egalite","buteur_licence":"185430","buteur_nom":"Bastien Faur","passeur_licence":null,"passeur_nom":null},{"temps":"47:11","num":69,"situation":"egalite","buteur_licence":"151350","buteur_nom":"Lionel Prin-Abeil","passeur_licence":"415121","passeur_nom":"Sacha Peuvion"},{"temps":"48:47","num":2,"situation":"superiorite","buteur_licence":"415121","buteur_nom":"Sacha Peuvion","passeur_licence":"359584","passeur_nom":"Remy Hettmann"},{"temps":"49:09","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"49:48","num":20,"situation":"egalite","buteur_licence":"221684","buteur_nom":"Sebastien Richard","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"}],"buts_contre":[],"pen_pour":[{"temps":"20:04","joueur":13,"code":"SUR","min":2,"fin":"22:04","licence":"321429","nom":"Nicolas Houy"},{"temps":"36:54","joueur":2,"code":"CRO","min":2,"fin":"38:54","licence":"415121","nom":"Sacha Peuvion"}],"pen_contre":[{"temps":"34:14","joueur":7,"code":"SUR","min":2,"fin":"34:32"},{"temps":"40:58","joueur":67,"code":"TRE","min":2,"fin":"42:58"},{"temps":"42:37","joueur":63,"code":"RET","min":2,"fin":"44:37"},{"temps":"48:46","joueur":7,"code":"RET","min":2,"fin":"48:47"}],"site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"21","licence":"305737","nom":"Mickael Marroc","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":0}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"130246","date":"2025-10-26","heure":"10:30","lieu":"SALLE PIERRE COULANGE","phase":"1/64e de finale","competition":"coupe","adversaire":"ST BONNET","us_score":{"p1":1,"p2":8,"prol":0,"total":9},"adv_score":{"p1":3,"p2":2,"prol":0,"total":5},"buts_pour":[{"temps":"10:43","num":15,"situation":"egalite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"414809","passeur_nom":"Liam Jullien"},{"temps":"27:11","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":null,"passeur_nom":null},{"temps":"30:36","num":15,"situation":"superiorite","buteur_licence":"137725","buteur_nom":"Alexis Nicolaÿ","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"30:48","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"35:52","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":null,"passeur_nom":null},{"temps":"40:50","num":16,"situation":"egalite","buteur_licence":"594283","buteur_nom":"Alexandre Clemencet","passeur_licence":null,"passeur_nom":null},{"temps":"41:47","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"415121","passeur_nom":"Sacha Peuvion"},{"temps":"42:16","num":34,"situation":"egalite","buteur_licence":"329146","buteur_nom":"Julien Pico","passeur_licence":"415121","passeur_nom":"Sacha Peuvion"},{"temps":"43:55","num":19,"situation":"egalite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"}],"buts_contre":[{"temps":"06:24","num":28,"situation":"egalite"},{"temps":"12:03","num":11,"situation":"egalite"},{"temps":"13:09","num":10,"situation":"egalite"},{"temps":"37:28","num":13,"situation":"superiorite"},{"temps":"49:02","num":24,"situation":"egalite"}],"pen_pour":[{"temps":"21:46","joueur":10,"code":"MEC","min":10,"fin":"31:46","licence":"414809","nom":"Liam Jullien"},{"temps":"36:30","joueur":70,"code":"TRE","min":2,"fin":"37:28","licence":"332791","nom":"Gabriel Merard"},{"temps":"43:43","joueur":70,"code":"MEC","min":10,"fin":"50:00","licence":"332791","nom":"Gabriel Merard"},{"temps":"45:16","joueur":15,"code":"TRE","min":2,"fin":"47:16","licence":"137725","nom":"Alexis Nicolaÿ"}],"pen_contre":[{"temps":"14:49","joueur":27,"code":"DUR","min":2,"fin":"16:49"},{"temps":"16:13","joueur":13,"code":"DUR","min":2,"fin":"18:13"},{"temps":"21:46","joueur":24,"code":"MEC","min":10,"fin":"31:46"},{"temps":"29:03","joueur":28,"code":"TRE","min":2,"fin":"30:36"},{"temps":"43:43","joueur":27,"code":"MEC","min":10,"fin":"50:00"}],"site":"domicile","domicile":true,"resultat":"victoire","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":5}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}},{"match_id":"131160","date":"2025-11-15","heure":"19:30","lieu":"SALLE PIERRE COULANGE","phase":"1/32e de finale","competition":"coupe","adversaire":"AUBAGNE N1","us_score":{"p1":1,"p2":2,"prol":0,"total":3},"adv_score":{"p1":2,"p2":4,"prol":0,"total":6},"buts_pour":[{"temps":"19:36","num":17,"situation":"egalite","buteur_licence":"277045","buteur_nom":"Paul Cousinie","passeur_licence":"263323","passeur_nom":"Quentin Mermerian-Berard"},{"temps":"32:39","num":78,"situation":"superiorite","buteur_licence":"359584","buteur_nom":"Remy Hettmann","passeur_licence":"332791","passeur_nom":"Gabriel Merard"},{"temps":"44:14","num":10,"situation":"egalite","buteur_licence":"414809","buteur_nom":"Liam Jullien","passeur_licence":"382146","passeur_nom":"Thibault Cosialls"}],"buts_contre":[{"temps":"20:24","num":11,"situation":"egalite"},{"temps":"24:21","num":82,"situation":"egalite"},{"temps":"30:54","num":6,"situation":"egalite"},{"temps":"35:51","num":76,"situation":"egalite"},{"temps":"36:01","num":11,"situation":"egalite"},{"temps":"48:19","num":82,"situation":"egalite"}],"pen_pour":[],"pen_contre":[{"temps":"31:17","joueur":13,"code":"ACC","min":2,"fin":"32:39"},{"temps":"38:43","joueur":18,"code":"CBA","min":2,"fin":"40:43"},{"temps":"41:00","joueur":13,"code":"TRE","min":2,"fin":"43:00"}],"site":"domicile","domicile":true,"resultat":"defaite","gardiens":[{"num":"28","licence":"382146","nom":"Thibault Cosialls","debut":"00:00","fin":"50:00","secondes":3000,"encaisses":6}],"format":{"mi_temps":1500,"fin_reglementaire":3000,"prolongation":true}}];
+const HOME_VENUE = "SALLE PIERRE COULANGE";
+
+if(typeof Chart === "undefined"){
+  document.querySelector(".wrap").insertAdjacentHTML("afterbegin",
+    `<div class="card" style="border-color:#d64550;color:#b8323d;margin-bottom:1.5rem;">
+      Chart.js n'a pas pu se charger depuis le CDN (pas de connexion internet, ou ressource bloquée).
+      Les tableaux et le classement resteront fonctionnels, mais les graphiques ne s'afficheront pas.
+    </div>`);
+}
+
+function timeToMin(t){
+  const [m,s] = t.split(":").map(Number);
+  return m + s/60;
+}
+function bucketLabel(min){
+  const start = Math.floor(min/5)*5;
+  return start+"-"+(start+5);
+}
+function periodOf(min, m){
+  const half = m.format.mi_temps/60, full = m.format.fin_reglementaire/60;
+  if(min < half) return "1ère mi-temps";
+  if(min < full) return "2e mi-temps";
+  return "Prolongation";
+}
+function fmtMin(sec){
+  const m = Math.floor(sec/60), s = sec%60;
+  return m + "'" + String(s).padStart(2,"0");
+}
+const CHART_COLORS = { pour:"#f2a93b", contre:"#d64550", home:"#3e7cb1", away:"#5b6b7a" };
+
+let charts = {};
+function destroyCharts(){ Object.values(charts).forEach(c=>c && c.destroy()); charts = {}; }
+const chartsReady = typeof Chart !== "undefined";
+
+function getFiltered(){
+  const lieu = document.getElementById("f-lieu").value;
+  const comp = document.getElementById("f-comp").value;
+  return DATA.filter(m=>{
+    if(lieu!=="tous" && m.site!==lieu) return false;
+    if(comp==="reguliere" && !(m.competition==="championnat" && m.phase==="Phase courante")) return false;
+    if(comp==="playoffs" && !(m.competition==="championnat" && m.phase!=="Phase courante")) return false;
+    if(comp==="coupe" && m.competition!=="coupe") return false;
+    return true;
+  });
+}
+
+function renderScoreboard(){
+  const v = DATA.filter(m=>m.resultat==="victoire").length;
+  const n = DATA.filter(m=>m.resultat==="nul").length;
+  const d = DATA.filter(m=>m.resultat==="defaite").length;
+  const bp = DATA.reduce((s,m)=>s+m.us_score.total,0);
+  const bc = DATA.reduce((s,m)=>s+m.adv_score.total,0);
+  const el = document.getElementById("scoreboard");
+  el.innerHTML = `
+    <div class="sb-cell"><div class="sb-label">Matchs</div><div class="sb-value">${DATA.length}</div></div>
+    <div class="sb-cell"><div class="sb-label">Bilan V-N-D</div><div class="sb-value small"><span class="vs">${v}</span>-<span class="ns">${n}</span>-<span class="ds">${d}</span></div></div>
+    <div class="sb-cell"><div class="sb-label">Buts pour</div><div class="sb-value">${bp}</div></div>
+    <div class="sb-cell"><div class="sb-label">Buts contre</div><div class="sb-value">${bc}</div></div>
+    <div class="sb-cell"><div class="sb-label">Différentiel</div><div class="sb-value">${bp-bc>0?"+":""}${bp-bc}</div></div>
+  `;
+}
+
+function renderKPIs(f){
+  const v = f.filter(m=>m.resultat==="victoire").length;
+  const n = f.filter(m=>m.resultat==="nul").length;
+  const d = f.filter(m=>m.resultat==="defaite").length;
+  const bp = f.reduce((s,m)=>s+m.us_score.total,0);
+  const bc = f.reduce((s,m)=>s+m.adv_score.total,0);
+  const penP = f.reduce((s,m)=>s+m.pen_pour.length,0);
+  const penC = f.reduce((s,m)=>s+m.pen_contre.length,0);
+  const items = [
+    ["Matchs", f.length],
+    ["Bilan", f.length? `${v}V ${n}N ${d}D` : "—"],
+    ["Buts / match", f.length? (bp/f.length).toFixed(1) : "—"],
+    ["Pénalités pour / contre", `${penP} / ${penC}`],
+  ];
+  document.getElementById("kpis").innerHTML = items.map(([l,vv])=>`
+    <div class="kpi"><div class="k-label">${l}</div><div class="k-value">${vv}</div></div>
+  `).join("");
+}
+
+function renderTiming(f){
+  if(!chartsReady) return;
+  const buckets = [];
+  for(let s=0; s<55; s+=5) buckets.push(s+"-"+(s+5));
+  const pour = buckets.map(()=>0), contre = buckets.map(()=>0);
+  f.forEach(m=>{
+    m.buts_pour.forEach(b=>{
+      const idx = Math.min(Math.floor(timeToMin(b.temps)/5), buckets.length-1);
+      pour[idx]++;
+    });
+    m.buts_contre.forEach(b=>{
+      const idx = Math.min(Math.floor(timeToMin(b.temps)/5), buckets.length-1);
+      contre[idx]++;
+    });
+  });
+  charts.timing = new Chart(document.getElementById("chartTiming"), {
+    type:"bar",
+    data:{ labels:buckets, datasets:[
+      {label:"Buts pour", data:pour, backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Buts contre", data:contre, backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{
+        x:{title:{display:true,text:"Minute de match",font:{family:"IBM Plex Mono",size:10}}, grid:{display:false}},
+        y:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}
+      }
+    }
+  });
+}
+
+function renderPeriod(f){
+  if(!chartsReady) return;
+  const labels = ["1ère mi-temps","2e mi-temps","Prolongation"];
+  const pour = [0,0,0], contre=[0,0,0];
+  f.forEach(m=>{
+    m.buts_pour.forEach(b=>{ pour[labels.indexOf(periodOf(timeToMin(b.temps), m))]++; });
+    m.buts_contre.forEach(b=>{ contre[labels.indexOf(periodOf(timeToMin(b.temps), m))]++; });
+  });
+  charts.period = new Chart(document.getElementById("chartPeriod"), {
+    type:"bar",
+    data:{ labels, datasets:[
+      {label:"Pour", data:pour, backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Contre", data:contre, backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      indexAxis:"y",
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{ x:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}, y:{grid:{display:false}} }
+    }
+  });
+}
+
+function renderTrend(f){
+  if(!chartsReady) return;
+  const sorted = [...f].sort((a,b)=> (a.date+a.heure).localeCompare(b.date+b.heure));
+  let cum = 0;
+  const points = sorted.map((m,i)=>{ cum += (m.us_score.total - m.adv_score.total); return cum; });
+  const labels = sorted.map((m,i)=> "M"+(i+1));
+  const pointColors = sorted.map(m=> m.resultat==="victoire" ? "#2c7a54" : m.resultat==="nul" ? "#9aa6b2" : "#b8323d");
+  charts.trend = new Chart(document.getElementById("chartTrend"), {
+    type:"line",
+    data:{ labels, datasets:[{
+      label:"Différentiel cumulé", data:points, borderColor:"#f2a93b", backgroundColor:"rgba(242,169,59,.12)",
+      fill:true, tension:.25, pointBackgroundColor:pointColors, pointRadius:4, pointHoverRadius:6,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{
+        title:(items)=> sorted[items[0].dataIndex] ? `${sorted[items[0].dataIndex].adversaire} (${sorted[items[0].dataIndex].date})` : "",
+        label:(item)=> `Différentiel cumulé : ${item.raw>0?"+":""}${item.raw}`
+      }}},
+      scales:{ x:{grid:{display:false}, ticks:{maxRotation:0, autoSkip:true}}, y:{beginAtZero:true, grid:{color:"#eee"}} }
+    }
+  });
+}
+
+function renderDomExt(){
+  const home = DATA.filter(m=>m.site==="domicile" && m.competition==="championnat");
+  const away = DATA.filter(m=>m.site==="exterieur" && m.competition==="championnat");
+  function card(title, list, extra){
+    const v=list.filter(m=>m.resultat==="victoire").length;
+    const n=list.filter(m=>m.resultat==="nul").length;
+    const d=list.filter(m=>m.resultat==="defaite").length;
+    const bp=list.reduce((s,m)=>s+m.us_score.total,0);
+    const bc=list.reduce((s,m)=>s+m.adv_score.total,0);
+    const pen=list.reduce((s,m)=>s+m.pen_pour.length,0);
+    return `
+      <h3>${title} <span style="opacity:.6;font-weight:400;">(${list.length} matchs)</span></h3>
+      <div class="dh-row"><span>Bilan V-N-D</span><b>${v}-${n}-${d}</b></div>
+      <div class="dh-row"><span>Buts pour / match</span><b>${list.length?(bp/list.length).toFixed(1):"—"}</b></div>
+      <div class="dh-row"><span>Buts contre / match</span><b>${list.length?(bc/list.length).toFixed(1):"—"}</b></div>
+      <div class="dh-row"><span>Différentiel total</span><b>${bp-bc>0?"+":""}${bp-bc}</b></div>
+      <div class="dh-row"><span>Pénalités / match</span><b>${list.length?(pen/list.length).toFixed(1):"—"}</b></div>
+    `;
+  }
+  document.getElementById("dh-home").innerHTML = card("Domicile", home);
+  document.getElementById("dh-away").innerHTML = card("Extérieur", away);
+
+  const po = DATA.filter(m=>m.competition==="championnat" && m.phase!=="Phase courante");
+  document.getElementById("dh-po").innerHTML = card("Phases finales", po);
+}
+
+function renderPenCode(f){
+  if(!chartsReady) return;
+  const codesPour = {}, codesContre = {};
+  f.forEach(m=>{
+    m.pen_pour.forEach(p=>{ codesPour[p.code] = (codesPour[p.code]||0)+1; });
+    m.pen_contre.forEach(p=>{ codesContre[p.code] = (codesContre[p.code]||0)+1; });
+  });
+  const allCodes = Array.from(new Set([...Object.keys(codesPour), ...Object.keys(codesContre)]))
+    .sort((a,b)=> (codesPour[b]||0)+(codesContre[b]||0) - ((codesPour[a]||0)+(codesContre[a]||0)));
+  charts.penCode = new Chart(document.getElementById("chartPenCode"), {
+    type:"bar",
+    data:{ labels:allCodes, datasets:[
+      {label:"Pour", data:allCodes.map(c=>codesPour[c]||0), backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Contre", data:allCodes.map(c=>codesContre[c]||0), backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      indexAxis:"y",
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{ x:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}, y:{grid:{display:false}, ticks:{font:{family:"IBM Plex Mono", size:10}}} }
+    }
+  });
+}
+
+function renderPenTime(f){
+  if(!chartsReady) return;
+  const buckets = [];
+  for(let s=0; s<55; s+=5) buckets.push(s+"-"+(s+5));
+  const pour = buckets.map(()=>0), contre = buckets.map(()=>0);
+  f.forEach(m=>{
+    m.pen_pour.forEach(p=>{
+      const idx = Math.min(Math.floor(timeToMin(p.temps)/5), buckets.length-1);
+      pour[idx]++;
+    });
+    m.pen_contre.forEach(p=>{
+      const idx = Math.min(Math.floor(timeToMin(p.temps)/5), buckets.length-1);
+      contre[idx]++;
+    });
+  });
+  charts.penTime = new Chart(document.getElementById("chartPenTime"), {
+    type:"bar",
+    data:{ labels:buckets, datasets:[
+      {label:"Pour", data:pour, backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Contre", data:contre, backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{
+        x:{title:{display:true,text:"Minute de match",font:{family:"IBM Plex Mono",size:10}}, grid:{display:false}},
+        y:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}}
+      }
+    }
+  });
+}
+
+function renderLeaders(f){
+  const goals = {}, assists = {};
+  f.forEach(m=>{
+    m.buts_pour.forEach(b=>{
+      goals[b.buteur_nom] = (goals[b.buteur_nom]||0)+1;
+      if(b.passeur_nom) assists[b.passeur_nom] = (assists[b.passeur_nom]||0)+1;
+    });
+  });
+  function initials(name){
+    const parts = name.split(" ");
+    return ((parts[0]||"")[0] || "?") + ((parts[1]||"")[0] || "");
+  }
+  function renderList(obj, elId){
+    const entries = Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const max = entries.length? entries[0][1] : 1;
+    document.getElementById(elId).innerHTML = entries.length ? entries.map(([name,count])=>`
+      <div class="leader-row">
+        <div class="leader-num">${initials(name)}</div>
+        <div class="leader-bar-wrap">
+          <div class="leader-name">${name}</div>
+          <div class="leader-bar-bg"><div class="leader-bar" style="width:${(count/max*100)}%"></div></div>
+        </div>
+        <div class="leader-val">${count}</div>
+      </div>
+    `).join("") : "<p class='section-note'>Aucune donnée pour ce filtre.</p>";
+  }
+  renderList(goals, "leaderScorers");
+  renderList(assists, "leaderAssists");
+}
+
+function renderStrength(f){
+  const labels = ["Égalité","Supériorité","Infériorité"];
+  const keys = ["egalite","superiorite","inferiorite"];
+  const pour = keys.map(k=> f.reduce((s,m)=> s + m.buts_pour.filter(b=>b.situation===k).length, 0));
+  const contre = keys.map(k=> f.reduce((s,m)=> s + m.buts_contre.filter(b=>b.situation===k).length, 0));
+
+  const totalP = pour.reduce((a,b)=>a+b,0) || 1;
+  const totalC = contre.reduce((a,b)=>a+b,0) || 1;
+  document.getElementById("strengthStats").innerHTML = `
+    <div class="dh-row" style="color:var(--ink);border-color:var(--line);font-weight:600;">
+      <span>Situation</span><b>Pour / Contre</b></div>
+    ${labels.map((l,i)=>`
+      <div class="dh-row" style="color:var(--ink);border-color:var(--line);">
+        <span>${l}</span><b>${pour[i]} / ${contre[i]}</b></div>`).join("")}
+    <p class="section-note" style="margin-top:.8rem;">
+      ${(pour[1]/totalP*100).toFixed(0)}% de nos buts sont marqués en supériorité,
+      et ${(contre[1]/totalC*100).toFixed(0)}% des buts encaissés le sont alors que nous sommes pénalisés.
+    </p>`;
+
+  if(!chartsReady) return;
+  charts.strength = new Chart(document.getElementById("chartStrength"), {
+    type:"bar",
+    data:{ labels, datasets:[
+      {label:"Buts pour", data:pour, backgroundColor:CHART_COLORS.pour, borderRadius:3},
+      {label:"Buts contre", data:contre, backgroundColor:CHART_COLORS.contre, borderRadius:3},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"top", labels:{font:{family:"IBM Plex Sans"}, boxWidth:12}}},
+      scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, ticks:{precision:0}, grid:{color:"#eee"}} }
+    }
+  });
+}
+
+function renderGoalies(f){
+  const agg = {};
+  f.forEach(m=> m.gardiens.forEach(g=>{
+    const a = agg[g.nom] || (agg[g.nom] = {sec:0, buts:0, matchs:0});
+    a.sec += g.secondes; a.buts += g.encaisses; a.matchs += 1;
+  }));
+  const rows = Object.entries(agg).sort((a,b)=> b[1].sec - a[1].sec);
+  const tbody = document.querySelector("#goalieTable tbody");
+  tbody.innerHTML = rows.length ? rows.map(([nom,a])=>{
+    const mn = a.sec/60;
+    const per50 = mn ? (a.buts/(mn/50)).toFixed(2) : "—";
+    return `<tr>
+      <td>${nom}</td>
+      <td class="num">${fmtMin(a.sec)}</td>
+      <td class="num">${a.buts}</td>
+      <td class="num">${per50}</td>
+      <td class="num">${a.matchs}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="5" class="section-note">Aucune donnée pour ce filtre.</td></tr>`;
+}
+
+function renderTable(f){
+  const sorted = [...f].sort((a,b)=> (b.date+b.heure).localeCompare(a.date+a.heure));
+  const tbody = document.querySelector("#matchTable tbody");
+  tbody.innerHTML = sorted.map(m=>{
+    const badge = m.resultat==="victoire" ? "v" : m.resultat==="nul" ? "n" : "d";
+    const badgeText = m.resultat==="victoire" ? "V" : m.resultat==="nul" ? "N" : "D";
+    const dateFmt = new Date(m.date).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
+    return `<tr>
+      <td class="num">${dateFmt}</td>
+      <td>${m.adversaire}</td>
+      <td><span class="lieu-tag">${m.site==="domicile"?"Domicile":m.site==="neutre"?"Neutre":"Extérieur"}</span></td>
+      <td>${m.phase}</td>
+      <td class="num">${m.us_score.total} – ${m.adv_score.total}</td>
+      <td><span class="badge ${badge}">${badgeText}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+function renderAll(){
+  destroyCharts();
+  const f = getFiltered();
+  document.getElementById("f-count").textContent = f.length + " match" + (f.length>1?"s":"") + " sélectionné" + (f.length>1?"s":"");
+  renderKPIs(f);
+  renderTiming(f);
+  renderPeriod(f);
+  renderTrend(f);
+  renderPenCode(f);
+  renderPenTime(f);
+  renderStrength(f);
+  renderLeaders(f);
+  renderGoalies(f);
+  renderTable(f);
+}
+
+renderScoreboard();
+renderDomExt();
+renderAll();
+document.getElementById("f-lieu").addEventListener("change", renderAll);
+document.getElementById("f-comp").addEventListener("change", renderAll);
+</script>
+</body>
+</html>
